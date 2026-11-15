@@ -23,16 +23,19 @@ import time
 
 import config
 from llm import LLMError
+from loopguard import LoopGuard
 from mc_api import McApiError
 
 _HERE = __file__
 
 
 class ChatBot:
-    def __init__(self, api, llm, *, max_chars=None, cfg=None, input_fn=None):
+    def __init__(self, api, llm, *, max_chars=None, cfg=None, input_fn=None, control=None):
         self.api = api
         self.llm = llm
         self.cfg = cfg or config
+        self.control = control
+        self.loop_guard = LoopGuard(getattr(config, "LOOP_LIMIT", 10))
         self.max_chars = int(max_chars or getattr(config, "CHAT_MAX_CHARS", 25))
         self.input_fn = input_fn or input
         self.stop = False
@@ -56,6 +59,12 @@ class ChatBot:
             pass
         try:
             while not self.stop:
+                if self.control:
+                    if self.control.stop:
+                        break
+                    if self.control.paused:
+                        time.sleep(0.2)
+                        continue
                 if deadline and time.time() >= deadline:
                     break
                 self._poll_game_chat()
@@ -65,6 +74,12 @@ class ChatBot:
                     message = None
                 if message:
                     if message.lower() in ("exit", "quit", "退出"):
+                        break
+                    if message.lower() == "/q" and self.control:
+                        self.control.toggle_pause()
+                        continue
+                    if message.lower() == "/e" and self.control:
+                        self.control.emergency()
                         break
                     self.reply("你", message)
                 time.sleep(float(getattr(self.cfg, "CHAT_POLL_S", 1.5)))
@@ -76,11 +91,16 @@ class ChatBot:
 
     def _input_loop(self):
         while not self.stop:
+            if self.control:
+                self.control.suspend()
             try:
                 text = self.input_fn("你> ").strip()
             except (EOFError, KeyboardInterrupt):
                 self.stop = True
                 return
+            finally:
+                if self.control:
+                    self.control.resume()
             if text:
                 self._queue.put(text)
 
@@ -147,6 +167,10 @@ class ChatBot:
 
     def reply(self, user, message):
         print(f"💬 {user}: {message}")
+        if self.loop_guard.hit({"user": user, "message": message}):
+            print(f"  🔁 连续 {self.loop_guard.limit} 轮同一句聊天，判定死循环，停止")
+            self.stop = True
+            return "（停止）"
         wait = float(getattr(self.cfg, "CHAT_COOLDOWN_S", 1.2)) - (time.time() - self._last_reply_at)
         if wait > 0:
             time.sleep(wait)

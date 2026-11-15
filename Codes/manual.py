@@ -28,6 +28,7 @@ import os
 import time
 
 from knowledge import KnowledgeBase
+from loopguard import LoopGuard
 from mc_api import McApiError
 from skills import SkillError, run_skill
 from trajectory import Trajectory
@@ -49,11 +50,14 @@ CALLABLE = [
 
 
 class ManualTester:
-    def __init__(self, api, state, knowledge=None, *, input_fn=None, traj=None):
+    def __init__(self, api, state, knowledge=None, *, input_fn=None, traj=None,
+                 control=None):
         self.api = api
         self.state = state
         self.knowledge = knowledge or KnowledgeBase()
         self.input_fn = input_fn or input
+        self.control = control
+        self.loop_guard = LoopGuard(10)
         self.traj = traj or Trajectory(
             os.path.join(_HERE, "logs"),
             run_id="manual-" + time.strftime("%Y%m%d-%H%M%S"))
@@ -67,10 +71,21 @@ class ManualTester:
         print("=" * 58)
         try:
             while not self.stop:
+                if self.control:
+                    if self.control.stop:
+                        break
+                    if self.control.paused:
+                        time.sleep(0.2)
+                        continue
                 try:
+                    if self.control:
+                        self.control.suspend()
                     line = self.input_fn("动作> ").strip()
                 except (EOFError, KeyboardInterrupt):
                     break
+                finally:
+                    if self.control:
+                        self.control.resume()
                 if line:
                     self.handle(line)
         finally:
@@ -87,6 +102,16 @@ class ManualTester:
             return True
         cmd = parts[0].lower()
 
+        if cmd == "q" and self.control:
+            self.control.toggle_pause()
+            return True
+        if cmd == "e" and self.control:
+            self.control.emergency()
+            return True
+        if self.loop_guard.hit(line.strip().lower()):
+            print(f"  🔁 连续 {self.loop_guard.limit} 轮相同命令，判定死循环，停止")
+            self.stop = True
+            return False
         if cmd in ("exit", "quit", "退出"):
             self.stop = True
             return False

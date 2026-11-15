@@ -23,6 +23,7 @@ import config as default_config
 import skills
 from advancements import load_table, score
 from llm import BudgetExceeded, LLMError, LLMFatalError
+from loopguard import LoopGuard, action_signature
 from mc_api import McApiError
 from netcheck import LatencyStats
 from planner import Planner
@@ -84,6 +85,7 @@ class Agent:
         self._last_hurt_is_player = False
         self._last_hurt_damage = 0.0
         self._last_flee_at = 0.0
+        self.loop_guard = LoopGuard(getattr(self.cfg, "LOOP_LIMIT", 10))
         if hasattr(self.api, "on_request"):
             self.api.on_request = self._on_api_request
         if hasattr(self.llm, "on_call"):
@@ -155,6 +157,14 @@ class Agent:
             decision = self._avoid_blocked(decision)
             decision = self._avoid_repeat(decision)
         if self.control and (self.control.stop or self.control.paused):
+            return
+        signature = action_signature(
+            decision.get("skill"), decision.get("args"), self.state)
+        if self.loop_guard.hit(signature):
+            print(f"  🔁 连续 {self.loop_guard.limit} 轮相同动作且状态没变，判定死循环，自动停止")
+            self.traj.log("loop_stop", signature=signature)
+            self.stop = True
+            self.stop_reason = f"连续 {self.loop_guard.limit} 轮死循环"
             return
         self.execute(decision)
         self._update_stagnation()

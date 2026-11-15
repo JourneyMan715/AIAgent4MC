@@ -3,7 +3,7 @@
 > 一支能自己玩 Minecraft 的 Agent：**大模型做低频规划，代码做高频执行，状态落盘可恢复，token 有预算，每一步可复盘。**
 >
 > 参赛赛道：南京大学「AI Agent for Minecraft 开发大赛」· **Harness 赛道**
-> 当前版本：v3（2026-11-16）· 离线测试：85 项全过 · 新增学习层/自由 strategy
+> 当前版本：v3（2026-11-16）· 离线测试：88 项全过 · 新增学习层/自由 strategy
 > 规则依据：[`Doc/RULES.md`](Doc/RULES.md)（初赛规则草案 v2）
 
 ---
@@ -107,7 +107,7 @@ AIAgent4MC/
 │  ├─ strategy.py            策略加载（strategy.md 优先，JSON 兼容）
 │  ├─ data/strategy.md       你的自由策略（推荐；LLM 自己拆）
 │  ├─ data/strategy*.json    兼容/示例策略
-│  ├─ data/advancement_scores.json  官方计分表（99 项 / 3385 分）
+│  ├─ data/advancement_scores.json  官方计分表（99 项 / 3388 分）
 │  ├─ mc_api.py              比赛服接口客户端（全端点 + stop_on）
 │  ├─ my_server/             自有服务器适配器（BACKEND=my_server）
 │  ├─ local_bot/             局域网测试桥接（Node + Mineflayer）
@@ -115,7 +115,7 @@ AIAgent4MC/
 │  ├─ trajectory.py          轨迹日志
 │  ├─ report.py              轨迹统计
 │  ├─ supervisor.py          守护进程（崩溃自动拉起）
-│  └─ tests/                 85 项离线单测
+│  └─ tests/                 88 项离线单测
 ├─ Doc/
 │  ├─ RULES.md                 ← 官方初赛规则（草案 v2，计分表来源）
 │  ├─ 参赛要求.md             官方公告 + v2 变更说明（历史存档）
@@ -195,6 +195,7 @@ MY_SERVER_TOKEN=dev
 | `STRATEGY_FILE` | `data/strategy.json` | 兼容策略（默认空） |
 | `STRATEGY_DOC` | `data/strategy.md` | 自由策略（优先） |
 | `LEARN_MAX_TICKS` | 200 | 学习层默认轮数 |
+| `LOOP_LIMIT` | 10 | 连续多少轮相同动作/状态判定死循环 |
 | `CHAT_MAX_CHARS` | 25 | 聊天回复最大字数 |
 | `CHAT_COOLDOWN_S` | 1.2 | 聊天回复冷却（秒） |
 
@@ -418,7 +419,7 @@ python main.py report
 ### 4.6 计分与策略
 
 - `advancements.py`：分值只看难度（5/15/30/60/100），根节点/不计分项 0 分；
-- `data/advancement_scores.json`：从 `Doc/RULES.md` 生成的官方表（99 项 / 3385 分）；
+- `data/advancement_scores.json`：从 `Doc/RULES.md` 生成的官方表（99 项 / 3388 分）；
 - `strategy.py` + `data/strategy.json`：阶段、分支优先级、目标、avoid，按文件修改时间热更新；
 - 规划层会把 `strategy` 摘要、候选进度、最近失败/黑名单放进提示词。
 
@@ -486,6 +487,7 @@ python main.py learn --minutes 20
 - **按事件组织**：`events` 里的受伤/死亡/聊天/进度变化会进入提示词，作为学习情境；
 - **情境记忆**：每次学习形成一段 `episode`，问答→实验→结论串起来；下一轮会读上一轮情境，动作更连贯；
 - **不冲分、不读 strategy**；有疑问会停下来问你（终端输入），回答写进 memory；
+- **10 轮死循环检测**：连续 10 轮动作/上下文完全相同就自动停止；模型说 `done`/`complete` 也会自动收尾；
 - memory 存在 `state/knowledge.json` / `knowledge.md`，决策层每次决策都会读摘要；
 - 默认只开放安全技能（survey/scan/砍树/采集/合成/熔炼/吃/装备/放置/探索）。
 - 想逐条手动试动作：`python main.py learn --manual`（不调用模型，`do`/`call` 直接测）。
@@ -541,7 +543,7 @@ python -m unittest discover -s tests -v
 python main.py mock --ticks 20
 ```
 
-85 项单测应全过；mock 应能砍树/合成/采集/记录进度。
+88 项单测应全过；mock 应能砍树/合成/采集/记录进度。
 
 ### 5.3 局域网 15 分钟（推荐日常）
 
@@ -665,8 +667,8 @@ python main.py report
 | 测网络延迟 | `python main.py ping --samples 5` |
 | 浸泡测试 | `python main.py run --minutes 120` |
 | 正式跑（守护） | `python supervisor.py --until 18:00` |
-| 运行中暂停 | 按 `q`（暂停/继续，会 `/stop` 打断当前动作） |
-| 运行中下线 | 按 `e`（`/stop` → 断开 → 登出，退出） |
+| 运行中暂停 | `run` 直接按 `q`；交互模式输入时用 `/q`（暂停/继续，会 `/stop`） |
+| 运行中下线 | `run` 直接按 `e`；交互模式输入时用 `/e`（stop → 断开 → 登出） |
 | 清本地状态 | `python main.py reset` |
 
 > 所有 `run` 都支持 `--until HH:MM`、`--minutes N`、`--ticks N`、`--reset`、`--strategy PATH`、`--no-llm`。
@@ -785,7 +787,7 @@ python main.py run --strategy data\strategy_safe.json
 - 游戏表现分 = 本队原始分 ÷ 本届最高原始分 × 60；
 - 并列：先比表现分 → 难度 5 数量 → 难度 4 → … → 更早达到最终分。
 
-官方计分表：99 项计分、合计 3385 分（生成在 `Codes/data/advancement_scores.json`）。
+官方计分表：99 项计分、合计 3388 分（生成在 `Codes/data/advancement_scores.json`）。
 
 ### 8.3 资源配额
 
@@ -1049,7 +1051,7 @@ python main.py run --minutes 10
 | `Codes/trajectory.py` / `report.py` | 日志与统计 | 低 |
 | `Codes/mock_api.py` | 假服务器/假大脑 | 测试 |
 | `Codes/supervisor.py` | 守护进程 | 低 |
-| `Codes/tests/` | 85 项单测 | 改代码时 |
+| `Codes/tests/` | 88 项单测 | 改代码时 |
 | `Codes/local_bot/` | 局域网桥接（Node） | 测试 |
 | `Codes/my_server/` | 自有服务器适配 | 以后 |
 
@@ -1081,9 +1083,9 @@ python main.py run --minutes 10
 | 时间 | 版本 | 变更 |
 |---|---|---|
 | 2026-11-12 | v1 | 键盘模拟 + 截图识别（已废弃） |
-| 2026-11-13 上午 | 检查点 `5968a85` | 重构前快照（API 版） |
+| 2026-11-13 上午 | 检查点 `5968a88` | 重构前快照（API 版） |
 | 2026-11-13 | v2 `d22e428` | 技能层/预算/状态恢复/无人值守/测试/文档 |
-| 2026-11-13 | `f0a2859` | 策略框架（分数结构/路线/调度规划） |
+| 2026-11-13 | `f0a2889` | 策略框架（分数结构/路线/调度规划） |
 | 2026-11-13 | `ac4497a` | 局域网桥接 + `BACKEND` 切换 |
 | 2026-11-13 | `2955c56` | 端口自检/重连/ECONNREFUSED 提示 |
 | 2026-11-13 | `5f5a10e` | craft 缺料误判与拉黑死循环修复 |

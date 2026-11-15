@@ -222,7 +222,7 @@ def cmd_run(args):
     llm = build_llm(state)
     from hotkeys import HotkeyController
 
-    control = HotkeyController(api)
+    control = HotkeyController(api, allow_msvcrt=True, force_exit=False)
     control.start()
     agent = Agent(api, llm, state, decide_locally=bool(getattr(args, "no_llm", False)),
                   control=control)
@@ -472,16 +472,29 @@ def cmd_learn(args):
         print("🧹 已清空学习记忆（knowledge.json/md）")
 
     if getattr(args, "manual", False):
+        from hotkeys import HotkeyController
         from manual import ManualTester
 
-        tester = ManualTester(api, state, knowledge)
-        tester.run()
+        control = HotkeyController(api, allow_msvcrt=True, force_exit=True)
+        control.start()
+        try:
+            tester = ManualTester(api, state, knowledge, control=control)
+            tester.run()
+        finally:
+            control.shutdown()
         return 0
 
-    llm = build_llm(state)
-    learner = LearnAgent(api, llm, state, knowledge)
-    learner.run(deadline=compute_deadline(args),
-                max_ticks=args.ticks or config.LEARN_MAX_TICKS)
+    from hotkeys import HotkeyController
+
+    control = HotkeyController(api, allow_msvcrt=True, force_exit=True)
+    control.start()
+    try:
+        llm = build_llm(state)
+        learner = LearnAgent(api, llm, state, knowledge, control=control)
+        learner.run(deadline=compute_deadline(args),
+                    max_ticks=args.ticks or config.LEARN_MAX_TICKS)
+    finally:
+        control.shutdown()
     return 0
 
 
@@ -498,8 +511,15 @@ def cmd_chat(args):
         return 1
     state = WorldState(state_path()).load()
     llm = build_llm(state)
-    bot = ChatBot(api, llm)
-    bot.run(deadline=compute_deadline(args))
+    from hotkeys import HotkeyController
+
+    control = HotkeyController(api, allow_msvcrt=True, force_exit=True)
+    control.start()
+    try:
+        bot = ChatBot(api, llm, control=control)
+        bot.run(deadline=compute_deadline(args))
+    finally:
+        control.shutdown()
     return 0
 
 

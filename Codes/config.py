@@ -121,6 +121,8 @@ RUN_MINUTES = _env_int("RUN_MINUTES", 0)
 # 最多决策多少轮（防止死循环；正常跑不到）
 MAX_TICKS = _env_int("MAX_TICKS", 200000)
 LEARN_MAX_TICKS = _env_int("LEARN_MAX_TICKS", 200)
+# 连续多少轮「动作+状态」完全相同就判定死循环
+LOOP_LIMIT = _env_int("LOOP_LIMIT", 10)
 
 # 两次「问大脑」之间至少隔几秒（0 = 不限制）
 DECISION_MIN_INTERVAL = _env_float("DECISION_MIN_INTERVAL", 0)

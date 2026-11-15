@@ -27,6 +27,7 @@ import config
 import hotkeys as hotkeys_mod
 import knowledge as knowledge_mod
 import learn as learn_mod
+import loopguard as loopguard_mod
 import manual as manual_mod
 import skills
 import strategy as strategy_mod
@@ -862,6 +863,18 @@ class TestLearnAgent(unittest.TestCase):
             decision = agent._decide()
             self.assertEqual(decision["action"], "ask_user")
 
+    def test_done_aliases(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            state = WorldState(os.path.join(tmp, "s.json")).load()
+            kb = knowledge_mod.KnowledgeBase(os.path.join(tmp, "k.json"),
+                                             os.path.join(tmp, "k.md"))
+            agent = learn_mod.LearnAgent(
+                MockApi(), SimpleNamespace(), state, kb, traj=mock.Mock())
+            for alias in ("done", "finish", "complete", "task_complete"):
+                self.assertEqual(agent._validate({"action": alias})["action"], "done")
+            self.assertEqual(agent._validate({"action": "record_rule", "done": True,
+                                              "rule": "x"})["action"], "done")
+
 
 class TestManualTester(unittest.TestCase):
     def test_do_and_call(self):
@@ -903,6 +916,24 @@ class TestChatBot(unittest.TestCase):
             text = bot.reply("Steve", "你好")
         self.assertEqual(len(text), 25)
         send.assert_called_once_with(text)
+
+
+class TestLoopGuard(unittest.TestCase):
+    def test_trips_after_ten_same(self):
+        guard = loopguard_mod.LoopGuard(10)
+        for _ in range(9):
+            self.assertFalse(guard.hit("same"))
+        self.assertTrue(guard.hit("same"))
+
+    def test_state_change_breaks_loop(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            state = WorldState(os.path.join(tmp, "s.json")).load()
+            guard = loopguard_mod.LoopGuard(10)
+            for _ in range(9):
+                guard.hit(loopguard_mod.action_signature("collect", {"group": "stone"}, state))
+            state.data["inventory"] = {"cobblestone": 1}
+            self.assertFalse(guard.hit(
+                loopguard_mod.action_signature("collect", {"group": "stone"}, state)))
 
 
 class TestHotkeys(unittest.TestCase):

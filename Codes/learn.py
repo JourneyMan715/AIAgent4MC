@@ -29,6 +29,7 @@ import time
 import config
 from knowledge import KnowledgeBase
 from llm import BudgetExceeded, LLMFatalError, LLMError
+from loopguard import LoopGuard, action_signature
 from mc_api import McApiError
 from skills import SKILLS, SkillError, run_skill, skill_help
 from trajectory import Trajectory
@@ -75,13 +76,14 @@ SYSTEM_PROMPT = """你是 Minecraft 的学习层（不是比赛执行层，也�
 
 class LearnAgent:
     def __init__(self, api, llm, state, knowledge=None, *, input_fn=None,
-                 traj=None, cfg=None):
+                 traj=None, cfg=None, control=None):
         self.api = api
         self.llm = llm
         self.state = state
         self.knowledge = knowledge or KnowledgeBase()
         self.input_fn = input_fn or input
         self.cfg = cfg or config
+        self.control = control
         self.traj = traj or Trajectory(os.path.join(_HERE, "logs"),
                                        run_id="learn-" + time.strftime("%Y%m%d-%H%M%S"))
         self.stop = False
@@ -93,6 +95,7 @@ class LearnAgent:
         self.recent_events = []
         self.episode = None
         self.must_ask = True
+        self.loop_guard = LoopGuard(getattr(self.cfg, "LOOP_LIMIT", 10))
 
     # ================= 主循环 =================
     def run(self, deadline=None, max_ticks=200):
@@ -105,6 +108,13 @@ class LearnAgent:
         self.traj.log("learn_start", knowledge=self.knowledge.counts())
         try:
             while not self.stop:
+                if self.control:
+                    if self.control.stop:
+                        self.stop_reason = self.control.reason or "用户强制下线"
+                        break
+                    if self.control.paused:
+                        time.sleep(0.2)
+                        continue
                 if deadline and time.time() >= deadline:
                     self.stop_reason = "到时间了"
                     break
@@ -119,6 +129,14 @@ class LearnAgent:
                         self.episode = self.knowledge.start_episode(self._context())
                         self.traj.log("learn_episode", id=self.episode.get("id"))
                     decision = self._decide()
+                    payload = {key: decision.get(key) for key in
+                               ("skill", "args", "question", "topic", "rule", "name", "notes")}
+                    signature = action_signature(decision.get("action"), payload, self.state)
+                    if self.loop_guard.hit(signature):
+                        print(f"  🔁 连续 {self.loop_guard.limit} 轮相同动作/上下文，判定死循环，自动停止")
+                        self.traj.log("learn_loop_stop", signature=signature)
+                        self.stop_reason = f"连续 {self.loop_guard.limit} 轮死循环"
+                        break
                     self._execute(decision)
                 except BudgetExceeded as e:
                     self.stop_reason = f"token 预算用完：{e}"
@@ -240,7 +258,7 @@ class LearnAgent:
         if not isinstance(obj, dict):
             return None
         action = str(obj.get("action") or "").strip().lower()
-        if action in ("done", "stop", "finish"):
+        if action in ("done", "stop", "finish", "complete", "task_complete") or obj.get("done") is True:
             return {"action": "done", "why": str(obj.get("why") or "")[:120]}
         if action == "ask_user":
             question = str(obj.get("question") or "").strip()
@@ -376,15 +394,23 @@ class LearnAgent:
         print(f"\n❓ 学习层问你：{question}")
         if decision.get("why"):
             print(f"   （为什么问：{decision['why']}）")
+        if self.control:
+            self.control.suspend()
         try:
             answer = self.input_fn("> ").strip()
         except (EOFError, KeyboardInterrupt):
             self.stop = True
             self.stop_reason = "用户结束问答"
             return
+        finally:
+            if self.control:
+                self.control.resume()
         if answer.lower() in ("exit", "quit", "退出", "结束"):
             self.stop = True
             self.stop_reason = "用户输入退出"
+            return
+        if answer.lower() == "/e" and self.control:
+            self.control.emergency()
             return
         if not answer:
             answer = "（用户没有回答）"

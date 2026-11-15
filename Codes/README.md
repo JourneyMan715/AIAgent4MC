@@ -55,7 +55,7 @@ python main.py ping --samples 5
 | `data/strategy.json` | 兼容策略（默认空，不预设阶段） |
 | `data/strategy_nether.json` / `strategy_safe.json` | 两套示例策略（下界冲刺 / 保底） |
 | `report.py` | 轨迹统计（对比策略用） |
-| `data/advancement_scores.json` | 官方计分表（由 `Doc/RULES.md` 自动生成，99 项 / 3385 分） |
+| `data/advancement_scores.json` | 官方计分表（由 `Doc/RULES.md` 自动生成，99 项 / 3388 分） |
 | `build_scores_table.py` | 规则更新后重新生成上面的计分表 |
 | `netcheck.py` | 网络延迟测量（DNS/TCP/TLS + 运行统计）；每条 API/LLM 交互都会打印耗时 |
 | `scan_sensitive.py` | **开原前隐私自查**（只输出掩码；`--all` 连本机文件一起扫） |
@@ -65,7 +65,7 @@ python main.py ping --samples 5
 | `local_bot/` | **局域网测试**用的 Mineflayer 桥接（Node.js，另开一个进程） |
 | `mock_api.py` | 离线假服务器 + 假大脑（自检 / 单测用） |
 | `supervisor.py` | 守护进程：崩溃自动拉起，跑到结束时间 |
-| `tests/` | 85 个离线单元测试 |
+| `tests/` | 88 个离线单元测试 |
 | `requirements.txt` | 依赖（只有 `requests`） |
 
 ## 一圈（tick）在干什么
