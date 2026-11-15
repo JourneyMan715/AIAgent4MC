@@ -13,6 +13,7 @@ venv\Scripts\activate
 python main.py test-api      :: 测大模型
 python main.py test-mc       :: 测当前后端 Bot
 python main.py learn --minutes 20  :: 学习层：学规则/写 memory（会问你）
+python main.py chat           :: 和 Bot 聊天（LLM，≤25 字/条）
 python main.py run           :: 决策层：按 strategy 打球
 ```
 
@@ -36,6 +37,7 @@ python main.py ping --samples 5
 |---|---|
 | `main.py` | 入口：`run / learn / test-api / test-mc / status / strategy / report / ping / mock / reset` |
 | `manual.py` | 学习层的手动动作测试（`learn --manual`：`do`/`call`） |
+| `chat.py` | 聊天模式（`chat`：终端/游戏内消息 → LLM → ≤25 字回复） |
 | `config.py` | 所有配置项（从 `.env` 读密钥，本身不含密码） |
 | `.env` | **你的密钥和账号**（已被 gitignore，别提交） |
 | `llm.py` | 大模型客户端：计量、预算、重试、JSON 解析 |
@@ -62,7 +64,7 @@ python main.py ping --samples 5
 | `local_bot/` | **局域网测试**用的 Mineflayer 桥接（Node.js，另开一个进程） |
 | `mock_api.py` | 离线假服务器 + 假大脑（自检 / 单测用） |
 | `supervisor.py` | 守护进程：崩溃自动拉起，跑到结束时间 |
-| `tests/` | 79 个离线单元测试 |
+| `tests/` | 82 个离线单元测试 |
 | `requirements.txt` | 依赖（只有 `requests`） |
 
 ## 一圈（tick）在干什么

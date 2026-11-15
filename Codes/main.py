@@ -6,6 +6,7 @@ Minecraft AI 智能体 —— 入口（Harness 赛道版）
 
     python main.py run          自主跑（比赛模式：advancement 驱动、无人值守）
     python main.py learn        学习层（学规则/写 memory/有疑问问用户）
+    python main.py chat         和 Bot 聊天（LLM 回复，每条 ≤25 字）
     python main.py run --until 18:00
     python main.py run --minutes 30       只跑 30 分钟（联调）
     python main.py run --no-llm           不调用模型，只用本地规则（没余额/局域网测试）
@@ -475,6 +476,24 @@ def cmd_learn(args):
     return 0
 
 
+def cmd_chat(args):
+    """和 Bot 聊天：终端/游戏内消息 → LLM → 25 字内回复。"""
+    from chat import ChatBot
+
+    backend, desc = backend_info()
+    print(f"🖥 后端：{desc}")
+    api = build_backend()
+    if not login(api):
+        return 1
+    if not wait_ready(api):
+        return 1
+    state = WorldState(state_path()).load()
+    llm = build_llm(state)
+    bot = ChatBot(api, llm)
+    bot.run(deadline=compute_deadline(args))
+    return 0
+
+
 def cmd_help(_args=None):
     print(__doc__)
     print("提示：先 `cd Codes`，激活虚拟环境（venv\\Scripts\\activate），再运行上面的命令。")
@@ -515,6 +534,11 @@ def build_parser():
     learn_p.add_argument("--manual", action="store_true",
                          help="手动动作测试（不调用模型，输入 do/call 直接试）")
     learn_p.set_defaults(func=cmd_learn)
+
+    chat_p = sub.add_parser("chat", help="和 Bot 聊天（LLM 回复，每条 ≤25 字）")
+    chat_p.add_argument("--until", default=None, help="结束时间，形如 18:00")
+    chat_p.add_argument("--minutes", type=int, default=0, help="只聊多少分钟")
+    chat_p.set_defaults(func=cmd_chat)
 
     sub.add_parser("test-api", help="测大模型连通性").set_defaults(func=cmd_test_api)
     sub.add_parser("test-mc", help="测比赛服 Bot").set_defaults(func=cmd_test_mc)

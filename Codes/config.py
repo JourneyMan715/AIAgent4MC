@@ -134,6 +134,11 @@ NET_LATENCY_WARN_MS = _env_int("NET_LATENCY_WARN_MS", 3000)
 # 是否在控制台逐条打印每次交互的延迟（API/LLM）
 PRINT_LATENCY = _env_bool("PRINT_LATENCY", True)
 
+# 聊天模式：每条回复最多多少字、轮询间隔、冷却
+CHAT_MAX_CHARS = _env_int("CHAT_MAX_CHARS", 25)
+CHAT_POLL_S = _env_float("CHAT_POLL_S", 1.5)
+CHAT_COOLDOWN_S = _env_float("CHAT_COOLDOWN_S", 1.2)
+
 # 背包缓存多久（秒）——太短会多请求，太长会拿旧数据
 INVENTORY_TTL_S = _env_float("INVENTORY_TTL_S", 6)
 

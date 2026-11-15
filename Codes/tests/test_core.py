@@ -22,6 +22,7 @@ if HERE not in sys.path:
     sys.path.insert(0, HERE)
 
 import advancements
+import chat as chat_mod
 import config
 import knowledge as knowledge_mod
 import learn as learn_mod
@@ -843,6 +844,34 @@ class TestManualTester(unittest.TestCase):
                 tester.handle("do scan {}")
                 tester.handle("call status {}")
             self.assertGreaterEqual(kb.counts()["experiments"], 1)
+
+
+class TestChatBot(unittest.TestCase):
+    def test_clip_25(self):
+        bot = chat_mod.ChatBot(MockApi(), SimpleNamespace(), max_chars=25)
+        self.assertEqual(len(bot.clip("字" * 40)), 25)
+        self.assertEqual(bot.clip("  你好\n世界  "), "你好 世界")
+
+    def test_parse_chat(self):
+        self.assertEqual(
+            chat_mod.ChatBot.parse_chat({"type": "chat", "text": "Steve: hello"}),
+            ("Steve", "hello"),
+        )
+        self.assertEqual(
+            chat_mod.ChatBot.parse_chat({"type": "chat", "username": "Alex", "message": "hi"}),
+            ("Alex", "hi"),
+        )
+        self.assertIsNone(chat_mod.ChatBot.parse_chat({"type": "death"}))
+
+    def test_reply_is_short_and_sent(self):
+        api = MockApi()
+        llm = SimpleNamespace(chat=lambda *a, **k: "字" * 40)
+        cfg = SimpleNamespace(CHAT_COOLDOWN_S=0)
+        bot = chat_mod.ChatBot(api, llm, max_chars=25, cfg=cfg)
+        with mock.patch.object(api, "chat") as send, redirect_stdout(io.StringIO()):
+            text = bot.reply("Steve", "你好")
+        self.assertEqual(len(text), 25)
+        send.assert_called_once_with(text)
 
 
 class TestPlannerStrategy(unittest.TestCase):

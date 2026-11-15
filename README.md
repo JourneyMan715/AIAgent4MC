@@ -3,7 +3,7 @@
 > 一支能自己玩 Minecraft 的 Agent：**大模型做低频规划，代码做高频执行，状态落盘可恢复，token 有预算，每一步可复盘。**
 >
 > 参赛赛道：南京大学「AI Agent for Minecraft 开发大赛」· **Harness 赛道**
-> 当前版本：v3（2026-11-16）· 离线测试：79 项全过 · 新增学习层/自由 strategy
+> 当前版本：v3（2026-11-16）· 离线测试：82 项全过 · 新增学习层/自由 strategy
 > 规则依据：[`Doc/RULES.md`](Doc/RULES.md)（初赛规则草案 v2）
 
 ---
@@ -20,6 +20,7 @@
 | 4 | [架构设计与运行逻辑](#sec-4) | 分层、一次 tick 的流程、状态/预算/防死循环 |
 | 4.11 | [学习层（learn 模式）](#sec-learn) | 先学规则、写 memory、有疑问问你 |
 | 4.12 | [配方与合成](#sec-recipe) | 为什么配方会被拒、怎么修 |
+| 4.13 | [聊天模式（≤25 字）](#sec-chat) | 用 LLM 和 Bot 说话 |
 | 5 | [赛前测试与后续测试](#sec-5) | 三档测试、A/B、浸泡、指标判读 |
 | 6 | [命令速查（初次 / 后续）](#sec-6) | 两张表，照着敲 |
 | 7 | [策略撰写与规划](#sec-7) | `strategy.md` 自由文本、JSON 兼容、怎么 A/B |
@@ -114,7 +115,7 @@ AIAgent4MC/
 │  ├─ trajectory.py          轨迹日志
 │  ├─ report.py              轨迹统计
 │  ├─ supervisor.py          守护进程（崩溃自动拉起）
-│  └─ tests/                 79 项离线单测
+│  └─ tests/                 82 项离线单测
 ├─ Doc/
 │  ├─ RULES.md                 ← 官方初赛规则（草案 v2，计分表来源）
 │  ├─ 参赛要求.md             官方公告 + v2 变更说明（历史存档）
@@ -194,6 +195,8 @@ MY_SERVER_TOKEN=dev
 | `STRATEGY_FILE` | `data/strategy.json` | 兼容策略（默认空） |
 | `STRATEGY_DOC` | `data/strategy.md` | 自由策略（优先） |
 | `LEARN_MAX_TICKS` | 200 | 学习层默认轮数 |
+| `CHAT_MAX_CHARS` | 25 | 聊天回复最大字数 |
+| `CHAT_COOLDOWN_S` | 1.2 | 聊天回复冷却（秒） |
 
 ---
 
@@ -498,6 +501,23 @@ python main.py learn --minutes 20
 
 详见 [`Workflow/配方与合成.md`](Workflow/配方与合成.md)。
 
+<a id="sec-chat"></a>
+### 4.13 聊天模式（每条 ≤25 字）
+
+```bat
+python main.py chat
+python main.py chat --minutes 10
+```
+
+- 终端输入 → Bot 用 LLM 回复，并顺手发到游戏聊天；
+- 游戏内玩家说话 → 读 `/events` 的 chat 事件 → 自动回复；
+- **每条回复硬截断到 25 个字符**（`CHAT_MAX_CHARS`），system prompt 很短、不带长历史，
+  单条回复 `max_tokens=48`，省 token；
+- 回复前有 1.2 秒冷却，避免 `/chat` 限频。
+
+> 聊天模式只是“说话”，不会执行挖矿/战斗；要执行动作请用 `run` / `learn --manual`。
+> `BACKEND=nmo` 时会发到比赛服聊天，注意场合。
+
 ---
 
 <a id="sec-5"></a>
@@ -518,7 +538,7 @@ python -m unittest discover -s tests -v
 python main.py mock --ticks 20
 ```
 
-79 项单测应全过；mock 应能砍树/合成/采集/记录进度。
+82 项单测应全过；mock 应能砍树/合成/采集/记录进度。
 
 ### 5.3 局域网 15 分钟（推荐日常）
 
@@ -631,6 +651,7 @@ python main.py report
 | 离线仿真 | `python main.py mock --ticks 20` |
 | 学习规则/写 memory | `python main.py learn --minutes 20` |
 | 手动测试动作 | `python main.py learn --manual` |
+| 和 Bot 聊天 | `python main.py chat --minutes 10` |
 | 清学习记忆 | `python main.py learn --reset-knowledge` |
 | 看当前策略 | `python main.py strategy` |
 | 局域网短跑 | `python main.py run --minutes 15` |
@@ -971,6 +992,7 @@ python main.py run --minutes 10
 | `python main.py run [--until 18:00] [--minutes N] [--reset] [--strategy PATH] [--no-llm]` | 自主运行（决策层） |
 | `python main.py learn [--minutes N] [--ticks N] [--reset-knowledge]` | 学习层（学规则/问答/写 memory） |
 | `python main.py learn --manual` | 手动动作测试（`do`/`call`，不花 token） |
+| `python main.py chat [--minutes N]` | 和 Bot 聊天（LLM 回复，≤25 字/条） |
 | `python main.py test-api` | 测模型 |
 | `python main.py test-mc` | 测比赛服 Bot |
 | `python main.py status` | 看 Bot 状态 |
@@ -1020,7 +1042,7 @@ python main.py run --minutes 10
 | `Codes/trajectory.py` / `report.py` | 日志与统计 | 低 |
 | `Codes/mock_api.py` | 假服务器/假大脑 | 测试 |
 | `Codes/supervisor.py` | 守护进程 | 低 |
-| `Codes/tests/` | 79 项单测 | 改代码时 |
+| `Codes/tests/` | 82 项单测 | 改代码时 |
 | `Codes/local_bot/` | 局域网桥接（Node） | 测试 |
 | `Codes/my_server/` | 自有服务器适配 | 以后 |
 
@@ -1052,9 +1074,9 @@ python main.py run --minutes 10
 | 时间 | 版本 | 变更 |
 |---|---|---|
 | 2026-11-12 | v1 | 键盘模拟 + 截图识别（已废弃） |
-| 2026-11-13 上午 | 检查点 `5968a79` | 重构前快照（API 版） |
+| 2026-11-13 上午 | 检查点 `5968a82` | 重构前快照（API 版） |
 | 2026-11-13 | v2 `d22e428` | 技能层/预算/状态恢复/无人值守/测试/文档 |
-| 2026-11-13 | `f0a2799` | 策略框架（分数结构/路线/调度规划） |
+| 2026-11-13 | `f0a2829` | 策略框架（分数结构/路线/调度规划） |
 | 2026-11-13 | `ac4497a` | 局域网桥接 + `BACKEND` 切换 |
 | 2026-11-13 | `2955c56` | 端口自检/重连/ECONNREFUSED 提示 |
 | 2026-11-13 | `5f5a10e` | craft 缺料误判与拉黑死循环修复 |
