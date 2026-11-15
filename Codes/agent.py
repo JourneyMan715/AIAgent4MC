@@ -43,13 +43,14 @@ _OBSERVE_SKILLS = {"scan", "survey"}
 
 class Agent:
     def __init__(self, api, llm, state, *, cfg=default_config, planner=None,
-                 trajectory=None, verbose=True, decide_locally=False):
+                 trajectory=None, verbose=True, decide_locally=False, control=None):
         self.api = api
         self.llm = llm
         self.state = state
         self.cfg = cfg
         self.verbose = verbose
         self.decide_locally = decide_locally
+        self.control = control
 
         table_path = os.path.join(_HERE, "data", "advancement_scores.json")
         self.table = load_table(table_path)
@@ -109,6 +110,13 @@ class Agent:
 
         try:
             while not self._should_stop(max_ticks):
+                if self.control:
+                    if self.control.stop:
+                        self.stop_reason = self.control.reason or "用户强制下线"
+                        break
+                    if self.control.paused:
+                        time.sleep(0.2)
+                        continue
                 self.tick()
         except KeyboardInterrupt:
             self.stop_reason = "手动中断（Ctrl+C）"
@@ -122,6 +130,8 @@ class Agent:
         self.finish()
 
     def tick(self):
+        if self.control and (self.control.stop or self.control.paused):
+            return
         self.ticks += 1
         self.state.data.setdefault("stats", {})
         self.state.data["stats"]["ticks"] = int(self.state.data["stats"].get("ticks") or 0) + 1
@@ -144,6 +154,8 @@ class Agent:
             decision = self.decide()
             decision = self._avoid_blocked(decision)
             decision = self._avoid_repeat(decision)
+        if self.control and (self.control.stop or self.control.paused):
+            return
         self.execute(decision)
         self._update_stagnation()
         self.state.save()

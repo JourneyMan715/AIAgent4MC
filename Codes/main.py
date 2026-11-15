@@ -10,6 +10,7 @@ Minecraft AI 智能体 —— 入口（Harness 赛道版）
     python main.py run --until 18:00
     python main.py run --minutes 30       只跑 30 分钟（联调）
     python main.py run --no-llm           不调用模型，只用本地规则（没余额/局域网测试）
+    python main.py run                  运行中按 q 暂停/继续，按 e 强制下线
     python main.py test-api     测大模型连通性（会花一点点 token）
     python main.py test-mc      测比赛服 Bot：登录 + 等上线 + 打印状态
     python main.py status       看 Bot 当前状态
@@ -219,8 +220,16 @@ def cmd_run(args):
         state.reset()
 
     llm = build_llm(state)
-    agent = Agent(api, llm, state, decide_locally=bool(getattr(args, "no_llm", False)))
-    agent.run(deadline=compute_deadline(args), max_ticks=args.ticks or config.MAX_TICKS)
+    from hotkeys import HotkeyController
+
+    control = HotkeyController(api)
+    control.start()
+    agent = Agent(api, llm, state, decide_locally=bool(getattr(args, "no_llm", False)),
+                  control=control)
+    try:
+        agent.run(deadline=compute_deadline(args), max_ticks=args.ticks or config.MAX_TICKS)
+    finally:
+        control.shutdown()
     return 0
 
 

@@ -3,7 +3,7 @@
 > 一支能自己玩 Minecraft 的 Agent：**大模型做低频规划，代码做高频执行，状态落盘可恢复，token 有预算，每一步可复盘。**
 >
 > 参赛赛道：南京大学「AI Agent for Minecraft 开发大赛」· **Harness 赛道**
-> 当前版本：v3（2026-11-16）· 离线测试：84 项全过 · 新增学习层/自由 strategy
+> 当前版本：v3（2026-11-16）· 离线测试：85 项全过 · 新增学习层/自由 strategy
 > 规则依据：[`Doc/RULES.md`](Doc/RULES.md)（初赛规则草案 v2）
 
 ---
@@ -115,7 +115,7 @@ AIAgent4MC/
 │  ├─ trajectory.py          轨迹日志
 │  ├─ report.py              轨迹统计
 │  ├─ supervisor.py          守护进程（崩溃自动拉起）
-│  └─ tests/                 84 项离线单测
+│  └─ tests/                 85 项离线单测
 ├─ Doc/
 │  ├─ RULES.md                 ← 官方初赛规则（草案 v2，计分表来源）
 │  ├─ 参赛要求.md             官方公告 + v2 变更说明（历史存档）
@@ -541,7 +541,7 @@ python -m unittest discover -s tests -v
 python main.py mock --ticks 20
 ```
 
-84 项单测应全过；mock 应能砍树/合成/采集/记录进度。
+85 项单测应全过；mock 应能砍树/合成/采集/记录进度。
 
 ### 5.3 局域网 15 分钟（推荐日常）
 
@@ -665,6 +665,8 @@ python main.py report
 | 测网络延迟 | `python main.py ping --samples 5` |
 | 浸泡测试 | `python main.py run --minutes 120` |
 | 正式跑（守护） | `python supervisor.py --until 18:00` |
+| 运行中暂停 | 按 `q`（暂停/继续，会 `/stop` 打断当前动作） |
+| 运行中下线 | 按 `e`（`/stop` → 断开 → 登出，退出） |
 | 清本地状态 | `python main.py reset` |
 
 > 所有 `run` 都支持 `--until HH:MM`、`--minutes N`、`--ticks N`、`--reset`、`--strategy PATH`、`--no-llm`。
@@ -847,6 +849,8 @@ python main.py run --strategy data\strategy_safe.json
 | 情况 | 处理 |
 |---|---|
 | 崩溃 | supervisor 自动拉起；不行手动 `run`（**不要 reset**） |
+| 需要立刻停手 | 按 `q` 暂停；再按 `q` 继续 |
+| 需要强制下线 | 按 `e`：stop → disconnect → logout；进程退出 |
 | 掉线 | 自动重连；连续失败再重启 |
 | 反复失败 | 重启（黑名单会保留）；或改 `strategy.json` 换阶段 |
 | 402 | 程序会停；换代理/充值后重跑 |
@@ -1045,7 +1049,7 @@ python main.py run --minutes 10
 | `Codes/trajectory.py` / `report.py` | 日志与统计 | 低 |
 | `Codes/mock_api.py` | 假服务器/假大脑 | 测试 |
 | `Codes/supervisor.py` | 守护进程 | 低 |
-| `Codes/tests/` | 84 项单测 | 改代码时 |
+| `Codes/tests/` | 85 项单测 | 改代码时 |
 | `Codes/local_bot/` | 局域网桥接（Node） | 测试 |
 | `Codes/my_server/` | 自有服务器适配 | 以后 |
 
@@ -1077,9 +1081,9 @@ python main.py run --minutes 10
 | 时间 | 版本 | 变更 |
 |---|---|---|
 | 2026-11-12 | v1 | 键盘模拟 + 截图识别（已废弃） |
-| 2026-11-13 上午 | 检查点 `5968a84` | 重构前快照（API 版） |
+| 2026-11-13 上午 | 检查点 `5968a85` | 重构前快照（API 版） |
 | 2026-11-13 | v2 `d22e428` | 技能层/预算/状态恢复/无人值守/测试/文档 |
-| 2026-11-13 | `f0a2849` | 策略框架（分数结构/路线/调度规划） |
+| 2026-11-13 | `f0a2859` | 策略框架（分数结构/路线/调度规划） |
 | 2026-11-13 | `ac4497a` | 局域网桥接 + `BACKEND` 切换 |
 | 2026-11-13 | `2955c56` | 端口自检/重连/ECONNREFUSED 提示 |
 | 2026-11-13 | `5f5a10e` | craft 缺料误判与拉黑死循环修复 |

@@ -24,6 +24,7 @@ if HERE not in sys.path:
 import advancements
 import chat as chat_mod
 import config
+import hotkeys as hotkeys_mod
 import knowledge as knowledge_mod
 import learn as learn_mod
 import manual as manual_mod
@@ -902,6 +903,26 @@ class TestChatBot(unittest.TestCase):
             text = bot.reply("Steve", "你好")
         self.assertEqual(len(text), 25)
         send.assert_called_once_with(text)
+
+
+class TestHotkeys(unittest.TestCase):
+    def test_pause_and_emergency(self):
+        api = MockApi()
+        control = hotkeys_mod.HotkeyController(api)
+        with mock.patch.object(api, "stop") as stop:
+            control.toggle_pause()
+            self.assertTrue(control.paused)
+            stop.assert_called_once()
+            control.toggle_pause()
+            self.assertFalse(control.paused)
+        with mock.patch.object(api, "stop") as stop, \
+                mock.patch.object(api, "disconnect") as disconnect, \
+                mock.patch.object(api, "logout") as logout:
+            control.emergency()
+            self.assertTrue(control.stop)
+            stop.assert_called_once()
+            disconnect.assert_called_once()
+            logout.assert_called_once()
 
 
 class TestPlannerStrategy(unittest.TestCase):
