@@ -1,0 +1,843 @@
+{
+ "_readme": "由 RULES.md（项目根或 Doc/）的计分表（2026-11-13 草案 v2）自动生成。分值只由难度决定；scored=false 表示不计分。官方更新后重新生成即可。",
+ "minecraft:adventure/adventuring_time": {
+  "condition": "不计分：54 个群系，岛上不够",
+  "difficulty": 5,
+  "name": "Adventuring Time",
+  "score": 0,
+  "scored": false
+ },
+ "minecraft:adventure/arbalistic": {
+  "condition": "计分",
+  "difficulty": 5,
+  "name": "Arbalistic",
+  "score": 100,
+  "scored": true
+ },
+ "minecraft:adventure/avoid_vibration": {
+  "condition": "岛上有深暗之域（幽匿感测体/催发体）时计分",
+  "difficulty": 2,
+  "name": "Sneak 100",
+  "score": 15,
+  "scored": true
+ },
+ "minecraft:adventure/blowback": {
+  "condition": "不计分：API 缺反弹动作",
+  "difficulty": 4,
+  "name": "Blowback",
+  "score": 0,
+  "scored": false
+ },
+ "minecraft:adventure/brush_armadillo": {
+  "condition": "岛上有热带草原/恶地（犰狳）时计分",
+  "difficulty": 2,
+  "name": "Isn't It Scute?",
+  "score": 15,
+  "scored": true
+ },
+ "minecraft:adventure/bullseye": {
+  "condition": "计分",
+  "difficulty": 2,
+  "name": "Bullseye",
+  "score": 15,
+  "scored": true
+ },
+ "minecraft:adventure/craft_decorated_pot_using_only_sherds": {
+  "condition": "岛上有可疑沙砾/沙子（沙漠井、沙漠神殿、海底废墟、古迹废墟）时计分",
+  "difficulty": 3,
+  "name": "Careful Restoration",
+  "score": 30,
+  "scored": true
+ },
+ "minecraft:adventure/crafters_crafting_crafters": {
+  "condition": "计分",
+  "difficulty": 2,
+  "name": "Crafters Crafting Crafters",
+  "score": 15,
+  "scored": true
+ },
+ "minecraft:adventure/fall_from_world_height": {
+  "condition": "不计分：缺跳跃控制；虚空岛底下没有地面",
+  "difficulty": 4,
+  "name": "Caves & Cliffs",
+  "score": 0,
+  "scored": false
+ },
+ "minecraft:adventure/heart_transplanter": {
+  "condition": "岛上有苍白之园（嘎枝之心）时计分",
+  "difficulty": 3,
+  "name": "Heart Transplanter",
+  "score": 30,
+  "scored": true
+ },
+ "minecraft:adventure/hero_of_the_village": {
+  "condition": "岛上有村庄（交易、铁傀儡、袭击）时计分",
+  "difficulty": 4,
+  "name": "Hero of the Village",
+  "score": 60,
+  "scored": true
+ },
+ "minecraft:adventure/honey_block_slide": {
+  "condition": "不计分：缺跳跃控制，待复测",
+  "difficulty": 2,
+  "name": "Sticky Situation",
+  "score": 0,
+  "scored": false
+ },
+ "minecraft:adventure/kill_a_mob": {
+  "condition": "计分",
+  "difficulty": 1,
+  "name": "Monster Hunter",
+  "score": 5,
+  "scored": true
+ },
+ "minecraft:adventure/kill_all_mobs": {
+  "condition": "岛上做不到",
+  "difficulty": 5,
+  "name": "Monsters Hunted",
+  "score": 0,
+  "scored": false
+ },
+ "minecraft:adventure/kill_mob_near_sculk_catalyst": {
+  "condition": "岛上有深暗之域（幽匿感测体/催发体）时计分",
+  "difficulty": 3,
+  "name": "It Spreads",
+  "score": 30,
+  "scored": true
+ },
+ "minecraft:adventure/lighten_up": {
+  "condition": "岛上有试炼密室时计分",
+  "difficulty": 2,
+  "name": "Lighten Up",
+  "score": 15,
+  "scored": true
+ },
+ "minecraft:adventure/lightning_rod_with_villager_no_fire": {
+  "condition": "不计分：依赖雷暴，天气随机",
+  "difficulty": 4,
+  "name": "Surge Protector",
+  "score": 0,
+  "scored": false
+ },
+ "minecraft:adventure/minecraft_trials_edition": {
+  "condition": "岛上有试炼密室时计分",
+  "difficulty": 2,
+  "name": "Minecraft: Trial(s) Edition",
+  "score": 15,
+  "scored": true
+ },
+ "minecraft:adventure/ol_betsy": {
+  "condition": "计分",
+  "difficulty": 2,
+  "name": "Ol' Betsy",
+  "score": 15,
+  "scored": true
+ },
+ "minecraft:adventure/overoverkill": {
+  "condition": "不计分：缺落地攻击；重锤核心来自不祥宝库",
+  "difficulty": 4,
+  "name": "Over-Overkill",
+  "score": 0,
+  "scored": false
+ },
+ "minecraft:adventure/play_jukebox_in_meadows": {
+  "condition": "岛上有草甸时计分",
+  "difficulty": 3,
+  "name": "Sound of Music",
+  "score": 30,
+  "scored": true
+ },
+ "minecraft:adventure/read_power_of_chiseled_bookshelf": {
+  "condition": "计分",
+  "difficulty": 2,
+  "name": "The Power of Books",
+  "score": 15,
+  "scored": true
+ },
+ "minecraft:adventure/revaulting": {
+  "condition": "岛上有试炼密室时计分",
+  "difficulty": 4,
+  "name": "Revaulting",
+  "score": 60,
+  "scored": true
+ },
+ "minecraft:adventure/salvage_sherd": {
+  "condition": "岛上有可疑沙砾/沙子（沙漠井、沙漠神殿、海底废墟、古迹废墟）时计分",
+  "difficulty": 2,
+  "name": "Respecting the Remnants",
+  "score": 15,
+  "scored": true
+ },
+ "minecraft:adventure/shoot_arrow": {
+  "condition": "计分",
+  "difficulty": 1,
+  "name": "Take Aim",
+  "score": 5,
+  "scored": true
+ },
+ "minecraft:adventure/sleep_in_bed": {
+  "condition": "计分",
+  "difficulty": 1,
+  "name": "Sweet Dreams",
+  "score": 5,
+  "scored": true
+ },
+ "minecraft:adventure/sniper_duel": {
+  "condition": "计分",
+  "difficulty": 3,
+  "name": "Sniper Duel",
+  "score": 30,
+  "scored": true
+ },
+ "minecraft:adventure/spear_many_mobs": {
+  "condition": "不计分：API 缺长矛冲锋",
+  "difficulty": 4,
+  "name": "Mob Kabob",
+  "score": 0,
+  "scored": false
+ },
+ "minecraft:adventure/spyglass_at_dragon": {
+  "condition": "不计分：龙赛前已被杀",
+  "difficulty": 4,
+  "name": "Is It a Plane?",
+  "score": 0,
+  "scored": false
+ },
+ "minecraft:adventure/spyglass_at_ghast": {
+  "condition": "计分",
+  "difficulty": 2,
+  "name": "Is It a Balloon?",
+  "score": 15,
+  "scored": true
+ },
+ "minecraft:adventure/spyglass_at_parrot": {
+  "condition": "岛上有丛林（鹦鹉）时计分",
+  "difficulty": 2,
+  "name": "Is It a Bird?",
+  "score": 15,
+  "scored": true
+ },
+ "minecraft:adventure/summon_iron_golem": {
+  "condition": "计分",
+  "difficulty": 3,
+  "name": "Hired Help",
+  "score": 30,
+  "scored": true
+ },
+ "minecraft:adventure/throw_trident": {
+  "condition": "计分",
+  "difficulty": 4,
+  "name": "A Throwaway Joke",
+  "score": 60,
+  "scored": true
+ },
+ "minecraft:adventure/totem_of_undying": {
+  "condition": "岛上有村庄（交易、铁傀儡、袭击）时计分",
+  "difficulty": 4,
+  "name": "Postmortal",
+  "score": 60,
+  "scored": true
+ },
+ "minecraft:adventure/trade": {
+  "condition": "岛上有村庄（交易、铁傀儡、袭击）时计分",
+  "difficulty": 2,
+  "name": "What a Deal!",
+  "score": 15,
+  "scored": true
+ },
+ "minecraft:adventure/trade_at_world_height": {
+  "condition": "岛上有村庄（交易、铁傀儡、袭击）时计分",
+  "difficulty": 4,
+  "name": "Star Trader",
+  "score": 60,
+  "scored": true
+ },
+ "minecraft:adventure/trim_with_all_exclusive_armor_patterns": {
+  "condition": "不计分：要林地府邸、远古城市、海底神殿、末地城等",
+  "difficulty": 5,
+  "name": "Smithing with Style",
+  "score": 0,
+  "scored": false
+ },
+ "minecraft:adventure/trim_with_any_armor_pattern": {
+  "condition": "计分",
+  "difficulty": 3,
+  "name": "Crafting a New Look",
+  "score": 30,
+  "scored": true
+ },
+ "minecraft:adventure/two_birds_one_arrow": {
+  "condition": "计分",
+  "difficulty": 4,
+  "name": "Two Birds, One Arrow",
+  "score": 60,
+  "scored": true
+ },
+ "minecraft:adventure/under_lock_and_key": {
+  "condition": "岛上有试炼密室时计分",
+  "difficulty": 3,
+  "name": "Under Lock and Key",
+  "score": 30,
+  "scored": true
+ },
+ "minecraft:adventure/use_lodestone": {
+  "condition": "计分",
+  "difficulty": 2,
+  "name": "Country Lode, Take Me Home",
+  "score": 15,
+  "scored": true
+ },
+ "minecraft:adventure/very_very_frightening": {
+  "condition": "不计分：依赖雷暴，天气随机",
+  "difficulty": 5,
+  "name": "Very Very Frightening",
+  "score": 0,
+  "scored": false
+ },
+ "minecraft:adventure/voluntary_exile": {
+  "condition": "计分",
+  "difficulty": 3,
+  "name": "Voluntary Exile",
+  "score": 30,
+  "scored": true
+ },
+ "minecraft:adventure/walk_on_powder_snow_with_leather_boots": {
+  "condition": "岛上有细雪（雪坡/雪林）时计分",
+  "difficulty": 2,
+  "name": "Light as a Rabbit",
+  "score": 15,
+  "scored": true
+ },
+ "minecraft:adventure/who_needs_rockets": {
+  "condition": "岛上有试炼密室时计分",
+  "difficulty": 3,
+  "name": "Who Needs Rockets?",
+  "score": 30,
+  "scored": true
+ },
+ "minecraft:adventure/whos_the_pillager_now": {
+  "condition": "计分",
+  "difficulty": 2,
+  "name": "Who's the Pillager Now?",
+  "score": 15,
+  "scored": true
+ },
+ "minecraft:end/dragon_breath": {
+  "condition": "不计分",
+  "difficulty": 3,
+  "name": "You Need a Mint",
+  "score": 0,
+  "scored": false
+ },
+ "minecraft:end/dragon_egg": {
+  "condition": "不计分",
+  "difficulty": 3,
+  "name": "The Next Generation",
+  "score": 0,
+  "scored": false
+ },
+ "minecraft:end/elytra": {
+  "condition": "计分",
+  "difficulty": 4,
+  "name": "Sky's the Limit",
+  "score": 60,
+  "scored": true
+ },
+ "minecraft:end/enter_end_gateway": {
+  "condition": "计分",
+  "difficulty": 3,
+  "name": "Remote Getaway",
+  "score": 30,
+  "scored": true
+ },
+ "minecraft:end/find_end_city": {
+  "condition": "计分",
+  "difficulty": 4,
+  "name": "The City at the End of the Game",
+  "score": 60,
+  "scored": true
+ },
+ "minecraft:end/kill_dragon": {
+  "condition": "不计分，按照规则没有末影龙的存在",
+  "difficulty": 4,
+  "name": "Free the End",
+  "score": 0,
+  "scored": false
+ },
+ "minecraft:end/levitate": {
+  "condition": "计分",
+  "difficulty": 4,
+  "name": "Great View From Up Here",
+  "score": 60,
+  "scored": true
+ },
+ "minecraft:end/respawn_dragon": {
+  "condition": "不计分",
+  "difficulty": 4,
+  "name": "The End... Again...",
+  "score": 0,
+  "scored": false
+ },
+ "minecraft:husbandry/allay_deliver_cake_to_note_block": {
+  "condition": "岛上有掠夺者前哨站（悦灵）时计分",
+  "difficulty": 3,
+  "name": "Birthday Song",
+  "score": 30,
+  "scored": true
+ },
+ "minecraft:husbandry/allay_deliver_item_to_player": {
+  "condition": "岛上有掠夺者前哨站（悦灵）时计分",
+  "difficulty": 3,
+  "name": "You've Got a Friend in Me",
+  "score": 30,
+  "scored": true
+ },
+ "minecraft:husbandry/axolotl_in_a_bucket": {
+  "condition": "岛上有繁茂洞穴（美西螈）时计分",
+  "difficulty": 3,
+  "name": "The Cutest Predator",
+  "score": 30,
+  "scored": true
+ },
+ "minecraft:husbandry/balanced_diet": {
+  "condition": "不计分：附魔金苹果、热带鱼等，岛上凑不齐",
+  "difficulty": 5,
+  "name": "A Balanced Diet",
+  "score": 0,
+  "scored": false
+ },
+ "minecraft:husbandry/bred_all_animals": {
+  "condition": "不计分：骆驼、熊猫、哞菇等多群系",
+  "difficulty": 5,
+  "name": "Two by Two",
+  "score": 0,
+  "scored": false
+ },
+ "minecraft:husbandry/breed_an_animal": {
+  "condition": "计分",
+  "difficulty": 1,
+  "name": "The Parrots and the Bats",
+  "score": 5,
+  "scored": true
+ },
+ "minecraft:husbandry/complete_catalogue": {
+  "condition": "不计分：11 种猫",
+  "difficulty": 5,
+  "name": "A Complete Catalogue",
+  "score": 0,
+  "scored": false
+ },
+ "minecraft:husbandry/feed_snifflet": {
+  "condition": "岛上有暖水海底废墟（嗅探兽蛋）时计分",
+  "difficulty": 4,
+  "name": "Little Sniffs",
+  "score": 60,
+  "scored": true
+ },
+ "minecraft:husbandry/fishy_business": {
+  "condition": "计分",
+  "difficulty": 2,
+  "name": "Fishy Business",
+  "score": 15,
+  "scored": true
+ },
+ "minecraft:husbandry/froglights": {
+  "condition": "岛上有冷/温/暖三种群系都在（三种青蛙）时计分",
+  "difficulty": 4,
+  "name": "With Our Powers Combined!",
+  "score": 60,
+  "scored": true
+ },
+ "minecraft:husbandry/kill_axolotl_target": {
+  "condition": "岛上有繁茂洞穴（美西螈）时计分",
+  "difficulty": 3,
+  "name": "The Healing Power of Friendship!",
+  "score": 30,
+  "scored": true
+ },
+ "minecraft:husbandry/leash_all_frog_variants": {
+  "condition": "岛上有冷/温/暖三种群系都在（三种青蛙）时计分",
+  "difficulty": 4,
+  "name": "When the Squad Hops into Town",
+  "score": 60,
+  "scored": true
+ },
+ "minecraft:husbandry/make_a_sign_glow": {
+  "condition": "计分",
+  "difficulty": 3,
+  "name": "Glow and Behold!",
+  "score": 30,
+  "scored": true
+ },
+ "minecraft:husbandry/obtain_netherite_hoe": {
+  "condition": "岛上有堡垒遗迹时计分",
+  "difficulty": 4,
+  "name": "Serious Dedication",
+  "score": 60,
+  "scored": true
+ },
+ "minecraft:husbandry/obtain_sniffer_egg": {
+  "condition": "岛上有暖水海底废墟（嗅探兽蛋）时计分",
+  "difficulty": 3,
+  "name": "Smells Interesting",
+  "score": 30,
+  "scored": true
+ },
+ "minecraft:husbandry/place_dried_ghast_in_water": {
+  "condition": "岛上有灵魂沙峡谷（下界化石里的失水恶魂）时计分",
+  "difficulty": 2,
+  "name": "Stay Hydrated!",
+  "score": 15,
+  "scored": true
+ },
+ "minecraft:husbandry/plant_any_sniffer_seed": {
+  "condition": "岛上有暖水海底废墟（嗅探兽蛋）时计分",
+  "difficulty": 3,
+  "name": "Planting the Past",
+  "score": 30,
+  "scored": true
+ },
+ "minecraft:husbandry/plant_seed": {
+  "condition": "计分",
+  "difficulty": 1,
+  "name": "A Seedy Place",
+  "score": 5,
+  "scored": true
+ },
+ "minecraft:husbandry/remove_wolf_armor": {
+  "condition": "岛上有热带草原/恶地（犰狳）时计分",
+  "difficulty": 3,
+  "name": "Shear Brilliance",
+  "score": 30,
+  "scored": true
+ },
+ "minecraft:husbandry/repair_wolf_armor": {
+  "condition": "岛上有热带草原/恶地（犰狳）时计分",
+  "difficulty": 3,
+  "name": "Good as New",
+  "score": 30,
+  "scored": true
+ },
+ "minecraft:husbandry/ride_a_boat_with_a_goat": {
+  "condition": "岛上有山地（山羊）时计分",
+  "difficulty": 3,
+  "name": "Whatever Floats Your Goat!",
+  "score": 30,
+  "scored": true
+ },
+ "minecraft:husbandry/safely_harvest_honey": {
+  "condition": "岛上有蜂巢（花林/平原/草甸的蜂巢）时计分",
+  "difficulty": 2,
+  "name": "Bee Our Guest",
+  "score": 15,
+  "scored": true
+ },
+ "minecraft:husbandry/silk_touch_nest": {
+  "condition": "岛上有蜂巢（花林/平原/草甸的蜂巢）时计分",
+  "difficulty": 3,
+  "name": "Total Beelocation",
+  "score": 30,
+  "scored": true
+ },
+ "minecraft:husbandry/tactical_fishing": {
+  "condition": "计分",
+  "difficulty": 2,
+  "name": "Tactical Fishing",
+  "score": 15,
+  "scored": true
+ },
+ "minecraft:husbandry/tadpole_in_a_bucket": {
+  "condition": "岛上有沼泽/红树林沼泽（青蛙、史莱姆）时计分",
+  "difficulty": 3,
+  "name": "Bukkit Bukkit",
+  "score": 30,
+  "scored": true
+ },
+ "minecraft:husbandry/tame_an_animal": {
+  "condition": "计分",
+  "difficulty": 2,
+  "name": "Best Friends Forever",
+  "score": 15,
+  "scored": true
+ },
+ "minecraft:husbandry/wax_off": {
+  "condition": "岛上有蜂巢（花林/平原/草甸的蜂巢）时计分",
+  "difficulty": 1,
+  "name": "Wax Off",
+  "score": 5,
+  "scored": true
+ },
+ "minecraft:husbandry/wax_on": {
+  "condition": "岛上有蜂巢（花林/平原/草甸的蜂巢）时计分",
+  "difficulty": 2,
+  "name": "Wax On",
+  "score": 15,
+  "scored": true
+ },
+ "minecraft:husbandry/whole_pack": {
+  "condition": "不计分：9 种狼要 9 种群系",
+  "difficulty": 5,
+  "name": "The Whole Pack",
+  "score": 0,
+  "scored": false
+ },
+ "minecraft:nether/all_effects": {
+  "condition": "岛上有下界要塞时计分",
+  "difficulty": 5,
+  "name": "How Did We Get Here?",
+  "score": 100,
+  "scored": true
+ },
+ "minecraft:nether/all_potions": {
+  "condition": "岛上有下界要塞时计分",
+  "difficulty": 5,
+  "name": "A Furious Cocktail",
+  "score": 100,
+  "scored": true
+ },
+ "minecraft:nether/brew_potion": {
+  "condition": "岛上有下界要塞时计分",
+  "difficulty": 2,
+  "name": "Local Brewery",
+  "score": 15,
+  "scored": true
+ },
+ "minecraft:nether/charge_respawn_anchor": {
+  "condition": "计分",
+  "difficulty": 3,
+  "name": "Not Quite \"Nine\" Lives",
+  "score": 30,
+  "scored": true
+ },
+ "minecraft:nether/create_beacon": {
+  "condition": "岛上有下界要塞时计分",
+  "difficulty": 4,
+  "name": "Bring Home the Beacon",
+  "score": 60,
+  "scored": true
+ },
+ "minecraft:nether/create_full_beacon": {
+  "condition": "岛上有下界要塞时计分",
+  "difficulty": 5,
+  "name": "Beaconator",
+  "score": 100,
+  "scored": true
+ },
+ "minecraft:nether/distract_piglin": {
+  "condition": "计分",
+  "difficulty": 1,
+  "name": "Oh Shiny",
+  "score": 5,
+  "scored": true
+ },
+ "minecraft:nether/explore_nether": {
+  "condition": "岛上有下界五种群系都在时计分",
+  "difficulty": 3,
+  "name": "Hot Tourist Destinations",
+  "score": 30,
+  "scored": true
+ },
+ "minecraft:nether/fast_travel": {
+  "condition": "如果岛不够大就不计分",
+  "difficulty": 4,
+  "name": "Subspace Bubble",
+  "score": 0,
+  "scored": false
+ },
+ "minecraft:nether/find_bastion": {
+  "condition": "岛上有堡垒遗迹时计分",
+  "difficulty": 3,
+  "name": "Those Were the Days",
+  "score": 30,
+  "scored": true
+ },
+ "minecraft:nether/find_fortress": {
+  "condition": "岛上有下界要塞时计分",
+  "difficulty": 3,
+  "name": "A Terrible Fortress",
+  "score": 30,
+  "scored": true
+ },
+ "minecraft:nether/get_wither_skull": {
+  "condition": "岛上有下界要塞时计分",
+  "difficulty": 4,
+  "name": "Spooky Scary Skeleton",
+  "score": 60,
+  "scored": true
+ },
+ "minecraft:nether/loot_bastion": {
+  "condition": "岛上有堡垒遗迹时计分",
+  "difficulty": 3,
+  "name": "War Pigs",
+  "score": 30,
+  "scored": true
+ },
+ "minecraft:nether/netherite_armor": {
+  "condition": "岛上有堡垒遗迹时计分",
+  "difficulty": 5,
+  "name": "Cover Me in Debris",
+  "score": 100,
+  "scored": true
+ },
+ "minecraft:nether/obtain_ancient_debris": {
+  "condition": "计分",
+  "difficulty": 4,
+  "name": "Hidden in the Depths",
+  "score": 60,
+  "scored": true
+ },
+ "minecraft:nether/obtain_blaze_rod": {
+  "condition": "岛上有下界要塞时计分",
+  "difficulty": 3,
+  "name": "Into Fire",
+  "score": 30,
+  "scored": true
+ },
+ "minecraft:nether/obtain_crying_obsidian": {
+  "condition": "计分",
+  "difficulty": 2,
+  "name": "Who is Cutting Onions?",
+  "score": 15,
+  "scored": true
+ },
+ "minecraft:nether/return_to_sender": {
+  "condition": "按目前API无法完成",
+  "difficulty": 3,
+  "name": "Return to Sender",
+  "score": 0,
+  "scored": false
+ },
+ "minecraft:nether/ride_strider": {
+  "condition": "计分",
+  "difficulty": 3,
+  "name": "This Boat Has Legs",
+  "score": 30,
+  "scored": true
+ },
+ "minecraft:nether/ride_strider_in_overworld_lava": {
+  "condition": "岛上有主世界 50 格以上的岩浆湖时计分",
+  "difficulty": 4,
+  "name": "Feels Like Home",
+  "score": 60,
+  "scored": true
+ },
+ "minecraft:nether/summon_wither": {
+  "condition": "岛上有下界要塞时计分",
+  "difficulty": 5,
+  "name": "Withering Heights",
+  "score": 100,
+  "scored": true
+ },
+ "minecraft:nether/uneasy_alliance": {
+  "condition": "计分",
+  "difficulty": 5,
+  "name": "Uneasy Alliance",
+  "score": 100,
+  "scored": true
+ },
+ "minecraft:story/cure_zombie_villager": {
+  "condition": "岛上有下界要塞时计分（不出意外，应该是要保证有要塞的）",
+  "difficulty": 4,
+  "name": "Zombie Doctor",
+  "score": 60,
+  "scored": true
+ },
+ "minecraft:story/deflect_arrow": {
+  "condition": "计分",
+  "difficulty": 2,
+  "name": "Not Today, Thank You",
+  "score": 15,
+  "scored": true
+ },
+ "minecraft:story/enchant_item": {
+  "condition": "计分",
+  "difficulty": 3,
+  "name": "Enchanter",
+  "score": 30,
+  "scored": true
+ },
+ "minecraft:story/enter_the_end": {
+  "condition": "岛上有下界要塞时计分",
+  "difficulty": 4,
+  "name": "The End?",
+  "score": 60,
+  "scored": true
+ },
+ "minecraft:story/enter_the_nether": {
+  "condition": "计分",
+  "difficulty": 3,
+  "name": "We Need to Go Deeper",
+  "score": 30,
+  "scored": true
+ },
+ "minecraft:story/follow_ender_eye": {
+  "condition": "岛上有下界要塞时计分",
+  "difficulty": 4,
+  "name": "Eye Spy",
+  "score": 60,
+  "scored": true
+ },
+ "minecraft:story/form_obsidian": {
+  "condition": "计分",
+  "difficulty": 2,
+  "name": "Ice Bucket Challenge",
+  "score": 15,
+  "scored": true
+ },
+ "minecraft:story/iron_tools": {
+  "condition": "计分",
+  "difficulty": 1,
+  "name": "Isn't It Iron Pick",
+  "score": 5,
+  "scored": true
+ },
+ "minecraft:story/lava_bucket": {
+  "condition": "计分",
+  "difficulty": 2,
+  "name": "Hot Stuff",
+  "score": 15,
+  "scored": true
+ },
+ "minecraft:story/mine_diamond": {
+  "condition": "计分",
+  "difficulty": 2,
+  "name": "Diamonds!",
+  "score": 15,
+  "scored": true
+ },
+ "minecraft:story/mine_stone": {
+  "condition": "计分",
+  "difficulty": 1,
+  "name": "Stone Age",
+  "score": 5,
+  "scored": true
+ },
+ "minecraft:story/obtain_armor": {
+  "condition": "计分",
+  "difficulty": 1,
+  "name": "Suit Up",
+  "score": 5,
+  "scored": true
+ },
+ "minecraft:story/shiny_gear": {
+  "condition": "计分",
+  "difficulty": 4,
+  "name": "Cover Me with Diamonds",
+  "score": 60,
+  "scored": true
+ },
+ "minecraft:story/smelt_iron": {
+  "condition": "计分",
+  "difficulty": 1,
+  "name": "Acquire Hardware",
+  "score": 5,
+  "scored": true
+ },
+ "minecraft:story/upgrade_tools": {
+  "condition": "计分",
+  "difficulty": 1,
+  "name": "Getting an Upgrade",
+  "score": 5,
+  "scored": true
+ }
+}

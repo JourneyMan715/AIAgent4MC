@@ -1,0 +1,30 @@
+{
+  "_readme": "示例：岛很穷/求稳时的保底打法。用 `python main.py run --strategy data/strategy_safe.json` 试跑。",
+  "mode": "safe_bootstrap",
+  "risk": "low",
+  "branch_priority": ["husbandry", "adventure", "village", "trial", "nether", "end"],
+  "phases": [
+    {"name": "基础", "until_min": 120, "focus": "bootstrap"},
+    {"name": "中盘", "until_min": 420, "focus": "best_available"},
+    {"name": "扫尾", "until_min": 480, "focus": "cheap_points"}
+  ],
+  "targets": [
+    "minecraft:story/mine_stone",
+    "minecraft:story/upgrade_tools",
+    "minecraft:story/smelt_iron",
+    "minecraft:story/obtain_armor",
+    "minecraft:adventure/kill_a_mob",
+    "minecraft:adventure/shoot_arrow",
+    "minecraft:husbandry/plant_seed"
+  ],
+  "avoid": [
+    "minecraft:adventure/arbalistic",
+    "minecraft:nether/all_potions",
+    "minecraft:nether/all_effects",
+    "minecraft:nether/create_full_beacon",
+    "minecraft:nether/summon_wither",
+    "minecraft:end/elytra",
+    "minecraft:end/find_end_city"
+  ],
+  "notes": "不冒险：先把故事线/农牧/冒险的基础分吃满，再考虑下界浅层。"
+}

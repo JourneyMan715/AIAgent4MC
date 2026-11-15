@@ -1,0 +1,30 @@
+{
+  "_readme": "示例：有下界要塞时的激进打法。用 `python main.py run --strategy data/strategy_nether.json` 试跑。",
+  "mode": "nether_rush",
+  "risk": "high",
+  "branch_priority": ["nether", "end", "village", "trial", "husbandry", "adventure"],
+  "phases": [
+    {"name": "开局", "until_min": 45, "focus": "bootstrap"},
+    {"name": "下界", "until_min": 210, "focus": "nether"},
+    {"name": "末地", "until_min": 330, "focus": "end"},
+    {"name": "中盘", "until_min": 450, "focus": "best_available"},
+    {"name": "扫尾", "until_min": 480, "focus": "cheap_points"}
+  ],
+  "targets": [
+    "minecraft:story/enter_the_nether",
+    "minecraft:nether/obtain_blaze_rod",
+    "minecraft:nether/obtain_ancient_debris",
+    "minecraft:story/enter_the_end",
+    "minecraft:end/elytra"
+  ],
+  "avoid": [
+    "minecraft:adventure/arbalistic",
+    "minecraft:nether/all_potions",
+    "minecraft:nether/all_effects",
+    "minecraft:nether/create_full_beacon",
+    "minecraft:nether/summon_wither",
+    "minecraft:end/kill_dragon",
+    "minecraft:end/respawn_dragon"
+  ],
+  "notes": "要塞线优先：烈焰棒→末影之眼→末地；残骸线看时间。100 分陷阱默认不碰。"
+}

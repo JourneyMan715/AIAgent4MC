@@ -1,0 +1,10 @@
+{
+  "_readme": "默认不预设任何打法/阶段。推荐把打法写在 data/strategy.md（自由文本，LLM 自己拆解）；本 JSON 仅作兼容/备用，可填 mode/risk/targets/avoid/phases。",
+  "mode": "custom",
+  "risk": "medium",
+  "branch_priority": [],
+  "phases": [],
+  "targets": [],
+  "avoid": [],
+  "notes": "用户/LLM 接管：写 strategy.md 或本文件之前，Agent 只保证生存和基础盘，不擅自冲分。"
+}

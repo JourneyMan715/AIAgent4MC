@@ -1,0 +1,8 @@
+{
+  "mcHost": "127.0.0.1",
+  "mcPort": 12345,
+  "mcUsername": "TestBot",
+  "mcVersion": "",
+  "apiPort": 8099,
+  "apiToken": "dev"
+}

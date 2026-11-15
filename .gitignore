@@ -1,0 +1,29 @@
+﻿# secrets - never commit
+Codes/.env
+.env
+*.env
+!Codes/.env.example
+
+# runtime data
+Codes/state/
+Codes/logs/
+Codes/local_bot/config.json
+
+# dependencies / caches
+venv/
+venv*/
+Codes/venv/
+Codes/local_bot/node_modules/
+__pycache__/
+*.pyc
+.pytest_cache/
+.dsh-tmp/
+
+# IDE
+.idea/
+.vscode/
+# personal launcher
+*26.3.bat
+tree.txt
+任务记录.md
+Workflow/flow.md

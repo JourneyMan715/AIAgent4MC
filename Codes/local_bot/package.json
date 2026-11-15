@@ -1,0 +1,21 @@
+{
+  "name": "local-bot-bridge",
+  "version": "0.1.0",
+  "private": true,
+  "description": "把本地 mineflayer bot 包装成和 NMO 赛事 API 同形状的 HTTP 服务（局域网测试用）",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "check": "node check.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "mineflayer": "*",
+    "mineflayer-pathfinder": "*",
+    "mineflayer-collectblock": "*",
+    "vec3": "*"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
