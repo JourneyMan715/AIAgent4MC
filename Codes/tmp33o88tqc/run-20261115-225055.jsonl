@@ -1,5 +1,0 @@
-{"t": 1794754255.736, "kind": "learn_start", "knowledge": {"rules": 0, "skills": 0, "qa": 0, "experiments": 0, "episodes": 0}}
-{"t": 1794754255.739, "kind": "learn_episode", "id": "ep-20261115-225055-7b1c"}
-{"t": 1794754255.742, "kind": "learn_ask", "question": "开始前先确认：这轮你想让我重点学什么？", "answer": "先学基础"}
-{"t": 1794754255.747, "kind": "learn_rule", "topic": "测试", "rule": "先看再动"}
-{"t": 1794754255.75, "kind": "learn_finish", "reason": "完", "ticks": 3, "knowledge": {"rules": 1, "skills": 0, "qa": 1, "experiments": 0, "episodes": 1}, "usage": {"input": 1, "output": 1, "calls": 1}}
