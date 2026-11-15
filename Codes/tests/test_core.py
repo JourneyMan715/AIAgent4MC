@@ -798,6 +798,23 @@ class TestKnowledge(unittest.TestCase):
             self.assertIn("木材", text)
             self.assertIn("先学基础合成", text)
 
+    def test_episode_context_is_persisted(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, "knowledge.json")
+            md = os.path.join(tmp, "knowledge.md")
+            kb = knowledge_mod.KnowledgeBase(path, md)
+            ep = kb.start_episode({"pos": [0, 64, 0], "events": ["受伤 -2"]})
+            kb.add_turn(ep["id"], {"kind": "ask", "question": "先学什么？", "answer": "木头"})
+            kb.add_turn(ep["id"], {"kind": "experiment", "skill": "scan",
+                                   "args": {}, "ok": True, "summary": "看到树"})
+            kb.close_episode(ep["id"], "先找树")
+            again = knowledge_mod.KnowledgeBase(path, md)
+            self.assertEqual(again.counts()["episodes"], 1)
+            self.assertIn("最近情境", again.summary())
+            again.export_markdown(md)
+            with open(md, encoding="utf-8") as fh:
+                self.assertIn("学习情境", fh.read())
+
 
 class TestStrategyDoc(unittest.TestCase):
     def test_markdown_is_primary(self):
@@ -830,6 +847,19 @@ class TestLearnAgent(unittest.TestCase):
             self.assertEqual(kb.counts()["qa"], 1)
             self.assertEqual(kb.counts()["rules"], 1)
             self.assertEqual(kb.counts()["skills"], 1)
+
+    def test_must_ask_before_experiment(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            state = WorldState(os.path.join(tmp, "s.json")).load()
+            kb = knowledge_mod.KnowledgeBase(os.path.join(tmp, "k.json"),
+                                             os.path.join(tmp, "k.md"))
+            llm = SimpleNamespace(chat_json=lambda *a, **k: {
+                "action": "experiment", "skill": "scan", "args": {}})
+            agent = learn_mod.LearnAgent(
+                MockApi(), llm, state, kb, input_fn=lambda _p: "木头", traj=mock.Mock())
+            agent.episode = kb.start_episode({"pos": [0, 64, 0]})
+            decision = agent._decide()
+            self.assertEqual(decision["action"], "ask_user")
 
 
 class TestManualTester(unittest.TestCase):

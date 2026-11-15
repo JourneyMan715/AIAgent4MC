@@ -64,7 +64,7 @@ python main.py ping --samples 5
 | `local_bot/` | **局域网测试**用的 Mineflayer 桥接（Node.js，另开一个进程） |
 | `mock_api.py` | 离线假服务器 + 假大脑（自检 / 单测用） |
 | `supervisor.py` | 守护进程：崩溃自动拉起，跑到结束时间 |
-| `tests/` | 82 个离线单元测试 |
+| `tests/` | 84 个离线单元测试 |
 | `requirements.txt` | 依赖（只有 `requests`） |
 
 ## 一圈（tick）在干什么

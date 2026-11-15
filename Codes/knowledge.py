@@ -30,6 +30,7 @@ MAX_RULES = 400
 MAX_SKILLS = 200
 MAX_QA = 200
 MAX_EXPERIMENTS = 300
+MAX_EPISODES = 100
 
 
 def _now_iso():
@@ -44,6 +45,7 @@ def _empty():
         "skills": [],
         "qa": [],
         "experiments": [],
+        "episodes": [],
     }
 
 
@@ -66,7 +68,7 @@ class KnowledgeBase:
         if not isinstance(loaded, dict):
             return self.data
         data = _empty()
-        for key in ("rules", "skills", "qa", "experiments"):
+        for key in ("rules", "skills", "qa", "experiments", "episodes"):
             value = loaded.get(key)
             if isinstance(value, list):
                 data[key] = [x for x in value if isinstance(x, dict)]
@@ -120,18 +122,21 @@ class KnowledgeBase:
         self.save()
         return item
 
-    def add_qa(self, question, answer):
+    def add_qa(self, question, answer, episode_id=None):
         question = str(question or "").strip()[:500]
         answer = str(answer or "").strip()[:2000]
         if not question or not answer:
             return None
         item = {"q": question, "a": answer, "at": _now_iso()}
+        if episode_id:
+            item["episode_id"] = str(episode_id)
         self.data["qa"].append(item)
         del self.data["qa"][:-MAX_QA]
         self.save()
         return item
 
-    def add_experiment(self, skill, args, ok, summary, delta=None):
+    def add_experiment(self, skill, args, ok, summary, delta=None,
+                       context=None, episode_id=None):
         item = {
             "skill": str(skill or "")[:80],
             "args": args if isinstance(args, dict) else {},
@@ -140,14 +145,66 @@ class KnowledgeBase:
             "delta": delta if isinstance(delta, dict) else {},
             "at": _now_iso(),
         }
+        if context:
+            item["context"] = context if isinstance(context, dict) else {"text": str(context)[:500]}
+        if episode_id:
+            item["episode_id"] = str(episode_id)
         self.data["experiments"].append(item)
         del self.data["experiments"][:-MAX_EXPERIMENTS]
         self.save()
         return item
 
+    # ================= 情境（episode）=================
+    def start_episode(self, context=None):
+        episode = {
+            "id": "ep-" + time.strftime("%Y%m%d-%H%M%S") + "-" + os.urandom(2).hex(),
+            "started_at": _now_iso(),
+            "context": context if isinstance(context, dict) else {"text": str(context or "")[:500]},
+            "turns": [],
+            "lesson": "",
+        }
+        self.data.setdefault("episodes", []).append(episode)
+        del self.data["episodes"][:-MAX_EPISODES]
+        self.save()
+        return episode
+
+    def add_turn(self, episode_id, turn):
+        for episode in reversed(self.data.get("episodes") or []):
+            if episode.get("id") == episode_id:
+                item = dict(turn or {})
+                item["at"] = _now_iso()
+                episode.setdefault("turns", []).append(item)
+                self.save()
+                return item
+        return None
+
+    def close_episode(self, episode_id, lesson=""):
+        for episode in reversed(self.data.get("episodes") or []):
+            if episode.get("id") == episode_id:
+                episode["ended_at"] = _now_iso()
+                episode["lesson"] = str(lesson or "")[:1000]
+                self.save()
+                return episode
+        return None
+
     # ================= 给提示词看的摘要 =================
     def summary(self, max_rules=25, max_skills=12, max_qa=8, max_chars=2600):
         lines = []
+        episodes = self.data.get("episodes") or []
+        if episodes:
+            last = episodes[-1]
+            context = last.get("context") or {}
+            lines.append("【最近情境】")
+            lines.append(f"- 情境：{str(context)[:300]}")
+            for turn in (last.get("turns") or [])[-4:]:
+                kind = turn.get("kind") or "?"
+                if kind == "ask":
+                    lines.append(f"- 问：{turn.get('question')} → 答：{turn.get('answer')}")
+                elif kind == "experiment":
+                    mark = "成功" if turn.get("ok") else "失败"
+                    lines.append(f"- 做：{turn.get('skill')}{turn.get('args') or {}} → {mark}：{turn.get('summary')}")
+                else:
+                    lines.append(f"- {kind}：{turn.get('text') or turn.get('rule') or ''}")
         rules = self.data.get("rules") or []
         if rules:
             lines.append("【已学规则】")
@@ -174,6 +231,7 @@ class KnowledgeBase:
             "skills": len(self.data.get("skills") or []),
             "qa": len(self.data.get("qa") or []),
             "experiments": len(self.data.get("experiments") or []),
+            "episodes": len(self.data.get("episodes") or []),
         }
 
     def reset(self):
@@ -218,6 +276,27 @@ class KnowledgeBase:
             for item in data["qa"]:
                 lines.append(f"- **问**：{item.get('q')}")
                 lines.append(f"  **答**：{item.get('a')}")
+        else:
+            lines.append("（还没有）")
+
+        lines += ["", "## 学习情境（最近 10 段）", ""]
+        if data.get("episodes"):
+            for ep in data["episodes"][-10:]:
+                lines.append(f"### {ep.get('id')}（{ep.get('started_at')}）")
+                lines.append(f"- 情境：`{json.dumps(ep.get('context') or {}, ensure_ascii=False)}`")
+                for turn in ep.get("turns") or []:
+                    kind = turn.get("kind")
+                    if kind == "ask":
+                        lines.append(f"  - 问：{turn.get('question')}")
+                        lines.append(f"    答：{turn.get('answer')}")
+                    elif kind == "experiment":
+                        mark = "✅" if turn.get("ok") else "❌"
+                        lines.append(f"  - {mark} `{turn.get('skill')}` → {turn.get('summary')}")
+                    else:
+                        lines.append(f"  - {kind}：{turn.get('text') or turn.get('rule') or ''}")
+                if ep.get("lesson"):
+                    lines.append(f"- 结论：{ep.get('lesson')}")
+                lines.append("")
         else:
             lines.append("（还没有）")
 

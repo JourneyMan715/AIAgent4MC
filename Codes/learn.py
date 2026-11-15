@@ -59,14 +59,17 @@ SYSTEM_PROMPT = """你是 Minecraft 的学习层（不是比赛执行层，也�
 {skills}
 
 学习原则：
-1. 先看 memory 里已经有什么，优先补**还不知道**的规则，不要重复已确认的结论。
-2. 不确定、有歧义、需要用户偏好（比如“先学哪条线”）→ ask_user；一次只问一个具体问题，不要一次问一串。
-3. 做实验前给假设；实验后用 record_rule 记录结论。结论要具体（“橡木原木→4 木板”比“可以合成”好）。
-4. 不要连续重复同一个实验；失败也是结论，记录失败条件和错误码。
-5. 只在安全范围实验（不主动下矿洞深处、不惹怪、不去下界/末地）。
-6. 不要冲 advancement，不要为了分数冒险。
-7. 用户回答后，要基于回答继续，不要重复问同一个问题。
-8. 只输出 JSON，字段用双引号。
+1. **先问后做**：开始学习前先用 ask_user 问清目标/偏好；`must_ask=true` 时禁止先做实验。
+2. 先读 `events`：受伤、死亡、聊天、进度变化都是情境；先解释/提问，再决定实验，不要无视事件。
+3. 先看 memory 里已经有什么，优先补**还不知道**的规则，不要重复已确认的结论。
+4. 不确定、有歧义、需要用户偏好（比如“先学哪条线”）→ ask_user；一次只问一个具体问题，不要一次问一串。
+5. 做实验前给假设；实验后用 record_rule 记录结论。结论要具体（“橡木原木→4 木板”比“可以合成”好）。
+6. **情境要连贯**：memory 的 episode 是连续学习过程；下一轮实验要延续上一轮（改参数/换条件/验证结论），不要每次从零开始。
+7. 不要连续重复同一个实验；失败也是结论，记录失败条件和错误码。
+8. 只在安全范围实验（不主动下矿洞深处、不惹怪、不去下界/末地）。
+9. 不要冲 advancement，不要为了分数冒险。
+10. 用户回答后，要基于回答继续，不要重复问同一个问题。
+11. 只输出 JSON，字段用双引号。
 """
 
 
@@ -87,6 +90,9 @@ class LearnAgent:
         self.last_experiment = None
         self.last_answer = None
         self.last_question = None
+        self.recent_events = []
+        self.episode = None
+        self.must_ask = True
 
     # ================= 主循环 =================
     def run(self, deadline=None, max_ticks=200):
@@ -109,6 +115,9 @@ class LearnAgent:
                 print(f"\n—— 学习轮 {self.ticks} ——")
                 try:
                     self._observe()
+                    if not self.episode:
+                        self.episode = self.knowledge.start_episode(self._context())
+                        self.traj.log("learn_episode", id=self.episode.get("id"))
                     decision = self._decide()
                     self._execute(decision)
                 except BudgetExceeded as e:
@@ -138,12 +147,38 @@ class LearnAgent:
         self._refresh_inventory()
         try:
             events = self.api.events() or {}
-            for event in (events.get("events") or [])[-5:]:
-                if isinstance(event, dict) and event.get("type"):
-                    self.state.add_event(str(event.get("type")))
+            raw = events.get("events") or []
+            self.recent_events = [e for e in raw if isinstance(e, dict)][-8:]
+            for event in self.recent_events:
+                self.state.add_event(self._event_text(event))
         except McApiError:
             pass
         self.state.save()
+
+    @staticmethod
+    def _event_text(event):
+        kind = str(event.get("type") or "?")
+        if kind == "chat":
+            return "聊天：" + str(event.get("text") or event.get("message") or "")
+        if kind == "hurt":
+            attacker = event.get("likely_attacker") or {}
+            name = attacker.get("name") if isinstance(attacker, dict) else ""
+            return f"受伤 -{event.get('damage')} {name or ''}".strip()
+        if kind == "death":
+            return "死亡"
+        return f"{kind}：{event.get('text') or event.get('message') or ''}".strip()
+
+    def _context(self):
+        inv = self.state.inventory()
+        top = sorted(inv.items(), key=lambda kv: -int(kv[1]))[:10]
+        return {
+            "pos": self.state.data.get("pos"),
+            "dimension": self.state.data.get("dimension"),
+            "health": self.state.data.get("health"),
+            "food": self.state.data.get("food"),
+            "inventory": {k: v for k, v in top},
+            "events": [self._event_text(e) for e in self.recent_events[-4:]],
+        }
 
     def _refresh_inventory(self):
         inv = self.api.inventory() or {}
@@ -163,7 +198,14 @@ class LearnAgent:
             "food": self.state.data.get("food"),
             "dimension": self.state.data.get("dimension"),
             "inventory": {k: v for k, v in top},
+            "events": [self._event_text(e) for e in self.recent_events[-6:]],
             "memory": self.knowledge.summary(max_rules=25, max_skills=10, max_qa=8),
+            "episode": {
+                "id": (self.episode or {}).get("id"),
+                "context": (self.episode or {}).get("context"),
+                "turns": ((self.episode or {}).get("turns") or [])[-4:],
+            },
+            "must_ask": self.must_ask,
             "last_experiment": self.last_experiment,
             "last_answer": self.last_answer,
             "time_left_min": round(time_left_min) if time_left_min is not None else None,
@@ -185,6 +227,13 @@ class LearnAgent:
         if decision is None:
             print("  ⚠️ 模型输出不合法，这轮先 scan")
             decision = {"action": "scan"}
+        if self.must_ask and decision.get("action") not in ("ask_user", "done"):
+            print("  🔎 先问再动手：这一轮先向用户确认")
+            decision = {
+                "action": "ask_user",
+                "question": "开始前先确认：这轮你想让我重点学什么？",
+                "why": "先问后做",
+            }
         return decision
 
     def _validate(self, obj):
@@ -231,6 +280,10 @@ class LearnAgent:
         return None
 
     # ================= 执行 =================
+    def _turn(self, turn):
+        if self.episode:
+            self.knowledge.add_turn(self.episode["id"], turn)
+
     def _execute(self, decision):
         action = decision["action"]
         if action == "done":
@@ -246,6 +299,7 @@ class LearnAgent:
                 evidence=decision.get("evidence"))
             if item:
                 print(f"  📝 记下规则 [{item['topic']}]：{item['rule']}")
+                self._turn({"kind": "rule", "topic": item["topic"], "rule": item["rule"]})
                 self.traj.log("learn_rule", topic=item["topic"], rule=item["rule"])
             return
         if action == "record_skill":
@@ -253,6 +307,7 @@ class LearnAgent:
                 decision["name"], decision["notes"], decision.get("args"))
             if item:
                 print(f"  📝 记下技能：{item['name']}")
+                self._turn({"kind": "skill", "text": item["name"] + "：" + item["notes"]})
                 self.traj.log("learn_skill", name=item["name"])
             return
         if action in ("scan", "survey"):
@@ -297,8 +352,19 @@ class LearnAgent:
         self.last_experiment = {
             "skill": skill, "args": args, "ok": ok,
             "summary": summary, "delta": delta,
+            "topic": topic, "hypothesis": hypothesis,
         }
-        self.knowledge.add_experiment(skill, args, ok, summary, delta)
+        self.knowledge.add_experiment(
+            skill, args, ok, summary, delta,
+            context=self._context(),
+            episode_id=(self.episode or {}).get("id"))
+        self._turn({
+            "kind": "experiment",
+            "skill": skill,
+            "args": args,
+            "ok": ok,
+            "summary": summary,
+        })
         self.state.add_recent(skill, ok, summary)
         self.state.save()
         self.traj.log("learn_experiment", skill=skill, args=args, ok=ok,
@@ -323,12 +389,19 @@ class LearnAgent:
         if not answer:
             answer = "（用户没有回答）"
         self.last_answer = {"question": question, "answer": answer}
-        self.knowledge.add_qa(question, answer)
+        self.knowledge.add_qa(question, answer, episode_id=(self.episode or {}).get("id"))
+        self._turn({"kind": "ask", "question": question, "answer": answer})
+        self.must_ask = False
         self.traj.log("learn_ask", question=question, answer=answer)
         print("  ✅ 已记入 memory")
 
     # ================= 收尾 =================
     def _finish(self):
+        if self.episode:
+            lesson = ""
+            if self.last_experiment:
+                lesson = str(self.last_experiment.get("summary") or "")
+            self.knowledge.close_episode(self.episode.get("id"), lesson)
         path = self.knowledge.export_markdown()
         print("\n" + "=" * 58)
         print(f"🧠 学习结束：{self.stop_reason or '完成'}")
