@@ -106,7 +106,7 @@ class KnowledgeBase:
         self.save()
         return item
 
-    def add_skill(self, name, notes, args=None):
+    def add_skill(self, name, notes, args=None, steps=None):
         name = str(name or "").strip()[:80]
         notes = str(notes or "").strip()
         if not name or not notes:
@@ -117,6 +117,8 @@ class KnowledgeBase:
             "args": args if isinstance(args, dict) else {},
             "at": _now_iso(),
         }
+        if isinstance(steps, list) and steps:
+            item["steps"] = steps[:30]
         self.data["skills"].append(item)
         del self.data["skills"][:-MAX_SKILLS]
         self.save()

@@ -30,16 +30,14 @@ import time
 from knowledge import KnowledgeBase
 from loopguard import LoopGuard
 from mc_api import McApiError
-from skills import SkillError, run_skill
+from skills import SKILLS, SkillError
+from skills_registry import execute as execute_skill, has_skill
 from trajectory import Trajectory
 from world_state import WorldState
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 
-SAFE_SKILLS = [
-    "survey", "scan", "chop_tree", "collect", "craft",
-    "smelt", "eat", "equip", "place", "explore",
-]
+SAFE_SKILLS = list(SKILLS.keys())
 
 CALLABLE = [
     "status", "inventory", "find_blocks", "get_block", "get_entities",
@@ -144,7 +142,7 @@ class ManualTester:
             "  skills                         列出可用技能\n"
             "  status                         看状态\n"
             "  inv                            看背包\n"
-            "  do <skill> [json]              跑技能（安全技能）\n"
+            "  do <skill> [json]              跑技能（全部技能 + 学习生成的组合技能）\n"
             "  call <method> [json]           调原始 API（禁止 login/logout/connect/disconnect）\n"
             "  exit                           退出"
         )
@@ -179,8 +177,8 @@ class ManualTester:
             print("用法：do <skill> [json]，例如 do scan {}")
             return
         skill = parts[1].strip().lower()
-        if skill not in SAFE_SKILLS:
-            print(f"❌ 只允许安全技能：{', '.join(SAFE_SKILLS)}")
+        if skill not in SAFE_SKILLS and not has_skill(skill):
+            print(f"❌ 未知技能：{skill}（可用：{', '.join(SAFE_SKILLS)}；或学习生成的组合技能）")
             return
         args = self._parse_args(parts[2] if len(parts) > 2 else "{}")
         if args is None:
@@ -188,7 +186,7 @@ class ManualTester:
         before = dict(self.state.inventory())
         started = time.time()
         try:
-            result = run_skill(self.api, self.state, skill, args) or {}
+            result = execute_skill(self.api, self.state, skill, args) or {}
             summary = str(result.get("summary") or skill)
             print(f"✅ {summary}（{time.time() - started:.0f}s）")
             ok = True

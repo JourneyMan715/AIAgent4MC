@@ -14,6 +14,8 @@ python main.py test-api      :: 测大模型
 python main.py test-mc       :: 测当前后端 Bot
 python main.py learn --minutes 20  :: 学习层：学规则/写 memory（会问你）
 python main.py chat           :: 和 Bot 聊天（LLM，≤25 字/条）
+python main.py run --competition :: 比赛计分模式（赛前默认关闭）
+python main.py skills         :: 查看 JSON 技能表 + 学习成果
 python main.py run           :: 决策层：按 strategy 打球
 ```
 
@@ -39,6 +41,10 @@ python main.py ping --samples 5
 | `manual.py` | 学习层的手动动作测试（`learn --manual`：`do`/`call`） |
 | `chat.py` | 聊天模式（`chat`：终端/游戏内消息 → LLM → ≤25 字回复） |
 | `hotkeys.py` | `run` 热键：`q` 暂停/继续，`e` 强制下线 |
+| `loopguard.py` | 连续 10 轮相同动作/状态 → 判定死循环 |
+| `dynamic_skills.py` | 学习成果打包的 JSON 组合技能（macro） |
+| `skills_registry.py` | 静态技能注册表（`data/skills.json`） |
+| `build_skill_registry.py` | 从 `skills.py` 重新生成 `data/skills.json` |
 | `config.py` | 所有配置项（从 `.env` 读密钥，本身不含密码） |
 | `.env` | **你的密钥和账号**（已被 gitignore，别提交） |
 | `llm.py` | 大模型客户端：计量、预算、重试、JSON 解析 |
@@ -50,6 +56,8 @@ python main.py ping --samples 5
 | `world_state.py` | 世界状态 + 记忆：位置、背包、进度、路点、失败、token（落盘） |
 | `advancements.py` | advancement 计分（只看难度：5/15/30/60/100；不计分项 0 分） |
 | `strategy.py` | 策略加载（`strategy.md` 优先，JSON 兼容，支持热更新） |
+| `data/skills.json` | **可执行技能注册表**：原子技能 `type=python/handler`，内置宏 `type=macro/steps` |
+| `state/skills.json` | 学习层打包的组合技能（macro） |
 | `data/strategy.md` | **你写的自由策略**（LLM 自己拆解；推荐） |
 | `data/strategy.example.md` | 策略模板（复制成 strategy.md） |
 | `data/strategy.json` | 兼容策略（默认空，不预设阶段） |
@@ -65,7 +73,7 @@ python main.py ping --samples 5
 | `local_bot/` | **局域网测试**用的 Mineflayer 桥接（Node.js，另开一个进程） |
 | `mock_api.py` | 离线假服务器 + 假大脑（自检 / 单测用） |
 | `supervisor.py` | 守护进程：崩溃自动拉起，跑到结束时间 |
-| `tests/` | 88 个离线单元测试 |
+| `tests/` | 94 个离线单元测试 |
 | `requirements.txt` | 依赖（只有 `requests`） |
 
 ## 一圈（tick）在干什么

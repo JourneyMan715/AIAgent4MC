@@ -24,12 +24,14 @@ if HERE not in sys.path:
 import advancements
 import chat as chat_mod
 import config
+import dynamic_skills as dynamic_mod
 import hotkeys as hotkeys_mod
 import knowledge as knowledge_mod
 import learn as learn_mod
 import loopguard as loopguard_mod
 import manual as manual_mod
 import skills
+import skills_registry as registry_mod
 import strategy as strategy_mod
 from agent import Agent
 from llm import BudgetExceeded, LLMClient, LLMError, LLMFatalError, extract_json
@@ -749,6 +751,15 @@ class TestStrategy(unittest.TestCase):
         self.assertEqual(data["phases"], [])
         self.assertEqual(s.phase(30)["focus"], "custom")
         self.assertEqual(s.phase(999)["name"], "未设阶段")
+        self.assertTrue(s.is_empty())
+
+    def test_doc_makes_strategy_non_empty(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            md = os.path.join(tmp, "strategy.md")
+            with open(md, "w", encoding="utf-8") as fh:
+                fh.write("先挖铁。")
+            s = strategy_mod.Strategy(os.path.join(tmp, "none.json"), doc_path=md)
+            self.assertFalse(s.is_empty())
 
     def test_file_override(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -956,6 +967,53 @@ class TestHotkeys(unittest.TestCase):
             logout.assert_called_once()
 
 
+class TestSkillsRegistry(unittest.TestCase):
+    def test_builtin_macro_executes(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            state = WorldState(os.path.join(tmp, "s.json")).load()
+            result = registry_mod.execute(MockApi(), state, "bootstrap_wood", {})
+            self.assertIn("bootstrap_wood", result["summary"])
+            self.assertEqual(result["steps"], 3)
+
+    def test_python_skill_dispatches(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            state = WorldState(os.path.join(tmp, "s.json")).load()
+            result = registry_mod.execute(MockApi(), state, "scan", {})
+            self.assertIn("summary", result)
+
+
+class TestDynamicSkills(unittest.TestCase):
+    def test_add_and_run_macro(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            registry = dynamic_mod.DynamicSkills(os.path.join(tmp, "skills.json"))
+            registry.add("scan_twice", "连续扫描两次", [
+                {"skill": "scan", "args": {}},
+                {"skill": "scan", "args": {}},
+            ])
+            state = WorldState(os.path.join(tmp, "s.json")).load()
+            result = dynamic_mod.run_dynamic(MockApi(), state, "scan_twice",
+                                             registry=registry)
+            self.assertIn("scan_twice", result["summary"])
+            self.assertEqual(result["steps"], 2)
+
+    def test_learn_packages_steps(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            state = WorldState(os.path.join(tmp, "s.json")).load()
+            kb = knowledge_mod.KnowledgeBase(os.path.join(tmp, "k.json"),
+                                             os.path.join(tmp, "k.md"))
+            agent = learn_mod.LearnAgent(
+                MockApi(), SimpleNamespace(), state, kb, traj=mock.Mock())
+            agent.dynamic = dynamic_mod.DynamicSkills(os.path.join(tmp, "sk.json"))
+            with redirect_stdout(io.StringIO()):
+                agent._execute({
+                    "action": "record_skill", "name": "scan_twice",
+                    "notes": "连续扫描", "args": {},
+                    "steps": [{"skill": "scan", "args": {}},
+                              {"skill": "scan", "args": {}}],
+                })
+            self.assertTrue(agent.dynamic.has("scan_twice"))
+
+
 class TestPlannerStrategy(unittest.TestCase):
     def test_avoid_filtered_from_pending(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -985,6 +1043,17 @@ class TestPlannerStrategy(unittest.TestCase):
             planner.decide(state, elapsed_min=1)
             brief = json.loads(llm.messages[1]["content"])
             self.assertIn("橡木原木", brief["memory"])
+
+    def test_autonomous_mode_prompt(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            state = WorldState(os.path.join(tmp, "s.json")).load()
+            llm = _CapturingLLM({"skill": "scan", "args": {}})
+            planner = Planner(llm, strategy_path=os.path.join(tmp, "none.json"),
+                              autonomous=True, competition=False)
+            planner.decide(state, elapsed_min=1)
+            self.assertIn("自主普通游戏", llm.messages[0]["content"])
+            brief = json.loads(llm.messages[1]["content"])
+            self.assertFalse(brief["mode"]["competition"])
 
 
 class TestReport(unittest.TestCase):

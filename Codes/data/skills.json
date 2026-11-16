@@ -1,0 +1,159 @@
+{
+  "version": 2,
+  "skills": [
+    {
+      "name": "survey",
+      "type": "python",
+      "handler": "survey",
+      "executable": true,
+      "args": "radius=48",
+      "help": "勘察自己的虚空岛：识别村庄/要塞/堡垒/试炼密室/古城等结构（决定能冲哪些进度）"
+    },
+    {
+      "name": "scan",
+      "type": "python",
+      "handler": "scan",
+      "executable": true,
+      "args": "radius=24",
+      "help": "观察周围：方块种类 + 生物 + 坐标"
+    },
+    {
+      "name": "chop_tree",
+      "type": "python",
+      "handler": "chop_tree",
+      "executable": true,
+      "args": "pos=[x,y,z]（可选，不给就找最近的树）, max_logs=8",
+      "help": "砍一整棵树（自动找树干、走到树下、自下而上挖）"
+    },
+    {
+      "name": "collect",
+      "type": "python",
+      "handler": "collect",
+      "executable": true,
+      "args": "group=\"log\"|\"stone\"|\"coal\"|\"iron\"|\"diamond\"… 或 types=[\"oak_log\"], count=8, radius=32",
+      "help": "采集指定方块若干个（木头/石头/煤/铁/钻石…）"
+    },
+    {
+      "name": "craft",
+      "type": "python",
+      "handler": "craft",
+      "executable": true,
+      "args": "item=\"wooden_pickaxe\", count=1",
+      "help": "合成物品（缺材料会自动补、需要工作台会自动放）"
+    },
+    {
+      "name": "smelt",
+      "type": "python",
+      "handler": "smelt",
+      "executable": true,
+      "args": "item=\"raw_iron\", count=3, fuel=\"coal\"（可选）",
+      "help": "熔炼（铁锭/金锭/玻璃/食物）；需要燃料"
+    },
+    {
+      "name": "eat",
+      "type": "python",
+      "handler": "eat",
+      "executable": true,
+      "args": "item（可选，不给就自动挑）",
+      "help": "吃东西回饥饿"
+    },
+    {
+      "name": "equip",
+      "type": "python",
+      "handler": "equip",
+      "executable": true,
+      "args": "item=\"iron_pickaxe\", slot=\"hand\"",
+      "help": "装备工具/护甲（不指定就挑最好的）"
+    },
+    {
+      "name": "place",
+      "type": "python",
+      "handler": "place",
+      "executable": true,
+      "args": "item=\"crafting_table\", pos（可选）",
+      "help": "放一个方块（工作台/熔炉/箱子…）"
+    },
+    {
+      "name": "attack",
+      "type": "python",
+      "handler": "attack",
+      "executable": true,
+      "args": "entity_id（可选）, timeout=20000",
+      "help": "攻击最近的怪（或指定实体）直到死亡/超时"
+    },
+    {
+      "name": "flee",
+      "type": "python",
+      "handler": "flee",
+      "executable": true,
+      "args": "distance=18",
+      "help": "远离最近的怪"
+    },
+    {
+      "name": "explore",
+      "type": "python",
+      "handler": "explore",
+      "executable": true,
+      "args": "distance≤24, direction=\"north\"|\"south\"|\"east\"|\"west\"（可选）",
+      "help": "朝某个方向走一小段（虚空岛：最多 24 格，别掉下去）"
+    },
+    {
+      "name": "bootstrap_wood",
+      "type": "macro",
+      "description": "砍树 → 工作台 → 木镐（新手基础盘）",
+      "args": {},
+      "steps": [
+        {
+          "skill": "chop_tree",
+          "args": {
+            "max_logs": 6
+          }
+        },
+        {
+          "skill": "craft",
+          "args": {
+            "item": "crafting_table",
+            "count": 1
+          }
+        },
+        {
+          "skill": "craft",
+          "args": {
+            "item": "wooden_pickaxe",
+            "count": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "bootstrap_stone",
+      "type": "macro",
+      "description": "木镐 → 挖石头 → 石镐",
+      "args": {},
+      "steps": [
+        {
+          "skill": "craft",
+          "args": {
+            "item": "wooden_pickaxe",
+            "count": 1
+          }
+        },
+        {
+          "skill": "collect",
+          "args": {
+            "group": "stone",
+            "count": 8,
+            "limit": 8
+          }
+        },
+        {
+          "skill": "craft",
+          "args": {
+            "item": "stone_pickaxe",
+            "count": 1
+          }
+        }
+      ]
+    }
+  ]
+}

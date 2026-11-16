@@ -13,8 +13,10 @@
 import json
 
 import config
+from dynamic_skills import DynamicSkills
 from knowledge import KnowledgeBase
-from skills import FOODS, SKILLS, skill_help
+from skills import FOODS, SKILLS
+from skills_registry import has_skill, help_text
 from strategy import Strategy
 
 
@@ -47,13 +49,14 @@ SYSTEM_PROMPT = """你是 Minecraft 生存比赛里一个 Bot 的调度器（不
 
 
 def _brief_text(state, time_left_min, tokens_left, pending, strategy_brief=None,
-                memory_text=None):
+                memory_text=None, mode=None):
     """把世界状态压成给模型看的一小段 JSON（越短越省 token）。"""
     data = state.brief(max_items=10)
     data["time_left_min"] = round(time_left_min) if time_left_min is not None else None
     if tokens_left is not None:
         data["tokens_left"] = int(tokens_left)
     data["strategy"] = strategy_brief or {}
+    data["mode"] = mode or {}
     if memory_text:
         data["memory"] = memory_text
     data["pending"] = [
@@ -73,13 +76,29 @@ def _key(skill, args):
 
 
 class Planner:
-    def __init__(self, llm, *, max_candidates=8, strategy=None, strategy_path=None):
+    def __init__(self, llm, *, max_candidates=8, strategy=None, strategy_path=None,
+                 autonomous=False, competition=True):
         self.llm = llm
         self.max_candidates = max_candidates
-        self.system = SYSTEM_PROMPT.format(skills=skill_help())
+        self.autonomous = bool(autonomous)
+        self.competition = bool(competition)
+        self.dynamic = DynamicSkills()
         self.strategy = strategy or Strategy(
             strategy_path, doc_path=getattr(config, "STRATEGY_DOC", None))
         self.knowledge = KnowledgeBase()
+
+    def _system_prompt(self):
+        text = SYSTEM_PROMPT.format(skills=help_text())
+        prefix = ""
+        if not self.competition:
+            prefix += ("【重要：赛前模式，比赛规则不启用】\n"
+                       "不要按 advancement 难度/分数优化，把游戏当普通生存来玩；"
+                       "规则学习交给 learn 模式。\n\n")
+        if self.autonomous:
+            prefix += ("【当前模式：自主普通游戏】\n"
+                       "用户没有写 strategy；按 memory 和当前状态自己决定，"
+                       "以生存、探索、资源、基础进度为主；不要为了分数冒险。\n\n")
+        return prefix + text
 
     # ---------------- 对外 ----------------
     def decide(self, state, *, time_left_min=None, tokens_left=None, elapsed_min=None):
@@ -87,18 +106,23 @@ class Planner:
         self.strategy.load()                     # strategy.json 兼容
         self.strategy.load_doc()                 # strategy.md 优先
         self.knowledge.load()
+        self.dynamic.load()
         pending = state.data.get("pending") or []
         avoid = self.strategy.avoid_ids()
         pending = [p for p in pending if p.get("id") not in avoid]
         targets = set(self.strategy.target_ids())
         if targets:
             pending.sort(key=lambda p: (p.get("id") not in targets, -int(p.get("score") or 0)))
+        if not self.competition:
+            pending = []
 
         user = _brief_text(state, time_left_min, tokens_left, pending,
                            self.strategy.brief(elapsed_min or 0),
-                           self.knowledge.summary())
+                           self.knowledge.summary(),
+                           mode={"autonomous": self.autonomous,
+                                 "competition": self.competition})
         messages = [
-            {"role": "system", "content": self.system},
+            {"role": "system", "content": self._system_prompt()},
             {"role": "user", "content": user},
         ]
         obj = self.llm.chat_json(messages)
@@ -119,7 +143,7 @@ class Planner:
         if skill in ("stop", "done", "finish", "__finish__"):
             return {"skill": "__finish__", "args": {}, "target": "", "why": obj.get("why", "")}
 
-        if skill not in SKILLS:
+        if skill not in SKILLS and not has_skill(skill):
             return None
 
         args = obj.get("args")

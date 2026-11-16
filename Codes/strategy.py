@@ -113,6 +113,14 @@ class Strategy:
     def has_doc(self):
         return bool(self.doc_text())
 
+    def is_empty(self):
+        """没有 strategy.md，且 JSON 也没有 phases/targets/avoid/branch_priority。"""
+        if self.doc_text():
+            return False
+        data = self.load()
+        return not (data.get("phases") or data.get("targets")
+                    or data.get("avoid") or data.get("branch_priority"))
+
     def load(self, force=False):
         try:
             mtime = os.path.getmtime(self.path)

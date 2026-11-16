@@ -151,6 +151,8 @@ LOG_DIR = _env("LOG_DIR", "logs")
 # 策略文件（相对 Codes/；改这个文件即可换打法，下一个决策生效）
 STRATEGY_FILE = _env("STRATEGY_FILE", os.path.join("data", "strategy.json"))
 STRATEGY_DOC = _env("STRATEGY_DOC", os.path.join("data", "strategy.md"))
+# 赛前默认关闭比赛规则/计分驱动；比赛当天用 --competition 或环境变量打开
+COMPETITION_MODE = _env_bool("COMPETITION_MODE", False)
 
 # 任务记录（给人看的总账）
 TASK_LOG_FILE = _env("TASK_LOG_FILE", "任务记录.md")

@@ -221,11 +221,20 @@ def cmd_run(args):
 
     llm = build_llm(state)
     from hotkeys import HotkeyController
+    from strategy import Strategy
+
+    strat = Strategy(config.STRATEGY_FILE, doc_path=config.STRATEGY_DOC)
+    competition = bool(getattr(args, "competition", False) or config.COMPETITION_MODE)
+    autonomous = strat.is_empty() and not competition
+    if autonomous:
+        print("🧠 策略为空：进入自主普通游戏模式（读 memory，按生存/探索自行决策）")
+    if not competition:
+        print("📖 赛前模式：比赛规则/计分暂不启用（比赛当天加 --competition）")
 
     control = HotkeyController(api, allow_msvcrt=True, force_exit=False)
     control.start()
     agent = Agent(api, llm, state, decide_locally=bool(getattr(args, "no_llm", False)),
-                  control=control)
+                  control=control, autonomous=autonomous, competition=competition)
     try:
         agent.run(deadline=compute_deadline(args), max_ticks=args.ticks or config.MAX_TICKS)
     finally:
@@ -523,6 +532,21 @@ def cmd_chat(args):
     return 0
 
 
+def cmd_skills(_args):
+    """以 JSON 形式查看可执行技能注册表 + 学习到的组合技能。"""
+    from dynamic_skills import DynamicSkills
+    from skills_registry import load, merged
+
+    data = {
+        "version": 1,
+        "skills": merged(),
+        "static_skills": load().get("skills") or [],
+        "learned_skills": DynamicSkills().specs(),
+    }
+    print(json.dumps(data, ensure_ascii=False, indent=2))
+    return 0
+
+
 def cmd_help(_args=None):
     print(__doc__)
     print("提示：先 `cd Codes`，激活虚拟环境（venv\\Scripts\\activate），再运行上面的命令。")
@@ -550,6 +574,8 @@ def build_parser():
                        help="策略文件（.md 自由文本优先；.json 兼容旧格式）")
     run_p.add_argument("--no-llm", action="store_true",
                        help="不调用大模型，只用本地规则（局域网测试/没余额时用）")
+    run_p.add_argument("--competition", action="store_true",
+                       help="启用比赛规则/计分（赛前默认关闭）")
     run_p.set_defaults(func=cmd_run)
 
     learn_p = sub.add_parser("learn", help="学习层：学规则/写 memory/有疑问问用户")
@@ -572,6 +598,7 @@ def build_parser():
     sub.add_parser("test-api", help="测大模型连通性").set_defaults(func=cmd_test_api)
     sub.add_parser("test-mc", help="测比赛服 Bot").set_defaults(func=cmd_test_mc)
     sub.add_parser("status", help="看 Bot 状态").set_defaults(func=cmd_status)
+    sub.add_parser("skills", help="以 JSON 查看技能注册表/学习成果").set_defaults(func=cmd_skills)
 
     strat_p = sub.add_parser("strategy", help="查看当前策略")
     strat_p.add_argument("--file", default=None, help="策略文件路径")

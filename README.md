@@ -3,7 +3,7 @@
 > 一支能自己玩 Minecraft 的 Agent：**大模型做低频规划，代码做高频执行，状态落盘可恢复，token 有预算，每一步可复盘。**
 >
 > 参赛赛道：南京大学「AI Agent for Minecraft 开发大赛」· **Harness 赛道**
-> 当前版本：v3（2026-11-16）· 离线测试：88 项全过 · 新增学习层/自由 strategy
+> 当前版本：v3（2026-11-16）· 离线测试：94 项全过 · 新增学习层/自由 strategy
 > 规则依据：[`Doc/RULES.md`](Doc/RULES.md)（初赛规则草案 v2）
 
 ---
@@ -21,6 +21,7 @@
 | 4.11 | [学习层（learn 模式）](#sec-learn) | 先学规则、写 memory、有疑问问你 |
 | 4.12 | [配方与合成](#sec-recipe) | 为什么配方会被拒、怎么修 |
 | 4.13 | [聊天模式（≤25 字）](#sec-chat) | 用 LLM 和 Bot 说话 |
+| 4.14 | [数据流：JSON 技能](#sec-json) | 模型只发 JSON，执行器分发 |
 | 5 | [赛前测试与后续测试](#sec-5) | 三档测试、A/B、浸泡、指标判读 |
 | 6 | [命令速查（初次 / 后续）](#sec-6) | 两张表，照着敲 |
 | 7 | [策略撰写与规划](#sec-7) | `strategy.md` 自由文本、JSON 兼容、怎么 A/B |
@@ -107,7 +108,7 @@ AIAgent4MC/
 │  ├─ strategy.py            策略加载（strategy.md 优先，JSON 兼容）
 │  ├─ data/strategy.md       你的自由策略（推荐；LLM 自己拆）
 │  ├─ data/strategy*.json    兼容/示例策略
-│  ├─ data/advancement_scores.json  官方计分表（99 项 / 3388 分）
+│  ├─ data/advancement_scores.json  官方计分表（99 项 / 3394 分）
 │  ├─ mc_api.py              比赛服接口客户端（全端点 + stop_on）
 │  ├─ my_server/             自有服务器适配器（BACKEND=my_server）
 │  ├─ local_bot/             局域网测试桥接（Node + Mineflayer）
@@ -115,7 +116,7 @@ AIAgent4MC/
 │  ├─ trajectory.py          轨迹日志
 │  ├─ report.py              轨迹统计
 │  ├─ supervisor.py          守护进程（崩溃自动拉起）
-│  └─ tests/                 88 项离线单测
+│  └─ tests/                 94 项离线单测
 ├─ Doc/
 │  ├─ RULES.md                 ← 官方初赛规则（草案 v2，计分表来源）
 │  ├─ 参赛要求.md             官方公告 + v2 变更说明（历史存档）
@@ -196,6 +197,7 @@ MY_SERVER_TOKEN=dev
 | `STRATEGY_DOC` | `data/strategy.md` | 自由策略（优先） |
 | `LEARN_MAX_TICKS` | 200 | 学习层默认轮数 |
 | `LOOP_LIMIT` | 10 | 连续多少轮相同动作/状态判定死循环 |
+| `COMPETITION_MODE` | `false` | 赛前关闭比赛规则；比赛当天开 |
 | `CHAT_MAX_CHARS` | 25 | 聊天回复最大字数 |
 | `CHAT_COOLDOWN_S` | 1.2 | 聊天回复冷却（秒） |
 
@@ -419,7 +421,7 @@ python main.py report
 ### 4.6 计分与策略
 
 - `advancements.py`：分值只看难度（5/15/30/60/100），根节点/不计分项 0 分；
-- `data/advancement_scores.json`：从 `Doc/RULES.md` 生成的官方表（99 项 / 3388 分）；
+- `data/advancement_scores.json`：从 `Doc/RULES.md` 生成的官方表（99 项 / 3394 分）；
 - `strategy.py` + `data/strategy.json`：阶段、分支优先级、目标、avoid，按文件修改时间热更新；
 - 规划层会把 `strategy` 摘要、候选进度、最近失败/黑名单放进提示词。
 
@@ -488,8 +490,10 @@ python main.py learn --minutes 20
 - **情境记忆**：每次学习形成一段 `episode`，问答→实验→结论串起来；下一轮会读上一轮情境，动作更连贯；
 - **不冲分、不读 strategy**；有疑问会停下来问你（终端输入），回答写进 memory；
 - **10 轮死循环检测**：连续 10 轮动作/上下文完全相同就自动停止；模型说 `done`/`complete` 也会自动收尾；
+- **全部技能开放**：`attack`/`flee`/下界相关探索也能学（战斗/岩浆/虚空附近先确认安全）；
+- **学习成果打包 JSON**：`record_skill` 带 `steps` 时写入 `state/skills.json`，
+  以后决策只需选这个组合技能名；`python main.py skills` 可查看 JSON 注册表；
 - memory 存在 `state/knowledge.json` / `knowledge.md`，决策层每次决策都会读摘要；
-- 默认只开放安全技能（survey/scan/砍树/采集/合成/熔炼/吃/装备/放置/探索）。
 - 想逐条手动试动作：`python main.py learn --manual`（不调用模型，`do`/`call` 直接测）。
 
 两个模式**每次运行前切换**：`learn` 学，`run` 打。详细说明见
@@ -523,6 +527,45 @@ python main.py chat --minutes 10
 > 聊天模式只是“说话”，不会执行挖矿/战斗；要执行动作请用 `run` / `learn --manual`。
 > `BACKEND=nmo` 时会发到比赛服聊天，注意场合。
 
+<a id="sec-json"></a>
+### 4.14 数据流：模型只发 JSON，执行器分发
+
+模型层不再“直接下命令给 Python 函数”，而是统一走 JSON：
+
+| 层 | 数据 |
+|---|---|
+| 模型决策 | `{"skill":"chop_tree","args":{},"target":"","why":"..."}` |
+| 静态技能表 | `data/skills.json`：`type=python` + `handler` + `executable=true` |
+| 内置组合技能 | 同文件：`bootstrap_wood` / `bootstrap_stone`，`type=macro` + `steps` |
+| 学习组合技能 | `state/skills.json`（`record_skill` 的 `steps` 打包） |
+| 执行器 | `Planner._validate` 校验 JSON → `skills_registry.execute` 按 spec 执行 Python/宏 |
+| 游戏接口 | HTTP JSON（`/status`、`/dig`…） |
+| 轨迹 / memory | JSONL / JSON |
+
+一个可执行 macro 长这样：
+
+```json
+{
+  "name": "bootstrap_wood",
+  "type": "macro",
+  "steps": [
+    {"skill": "chop_tree", "args": {"max_logs": 6}},
+    {"skill": "craft", "args": {"item": "crafting_table", "count": 1}},
+    {"skill": "craft", "args": {"item": "wooden_pickaxe", "count": 1}}
+  ]
+}
+```
+
+模型选 `bootstrap_wood` 一次，执行器连续跑 3 步；静态技能则通过 `handler` 调对应的 Python 实现。
+
+```bat
+python main.py skills      :: 直接看可执行 JSON 技能表 + 学习成果
+```
+
+> `skills.json` 现在不是“说明书”，每个条目都有 `type`/`handler` 或 `steps`/`executable`。
+> 模型只发 JSON 名字与参数，执行器分发；不做 `eval`，也不拼 Python 代码。
+> 这样模型一次决策选一个 macro，不用逐步决定底层动作。
+
 ---
 
 <a id="sec-5"></a>
@@ -543,7 +586,7 @@ python -m unittest discover -s tests -v
 python main.py mock --ticks 20
 ```
 
-88 项单测应全过；mock 应能砍树/合成/采集/记录进度。
+94 项单测应全过；mock 应能砍树/合成/采集/记录进度。
 
 ### 5.3 局域网 15 分钟（推荐日常）
 
@@ -662,6 +705,9 @@ python main.py report
 | 局域网短跑 | `python main.py run --minutes 15` |
 | 无模型模式（省钱） | `python main.py run --minutes 15 --no-llm` |
 | 自由策略（md） | `python main.py run --minutes 15 --strategy data\strategy.md` |
+| 自主普通游戏 | 不写策略直接 `run`（自动进入自主模式） |
+| 比赛计分模式 | `python main.py run --minutes 15 --competition` |
+| 查看 JSON 技能表 | `python main.py skills` |
 | 换策略 A/B | `python main.py run --minutes 15 --strategy data\strategy_nether.json` |
 | 看运行统计 | `python main.py report` |
 | 测网络延迟 | `python main.py ping --samples 5` |
@@ -710,10 +756,12 @@ python main.py run --strategy data\strategy.md
 或直接把文件命名为 `Codes/data/strategy.md`，`run` 会自动优先读它。
 用 `python main.py strategy` 可以查看当前策略（md 优先）。
 
-### 7.3 不写策略会怎样
+### 7.3 不写策略会怎样：自主普通游戏
 
-- `strategy.json` 为空 → 提示词告诉 LLM“用户还没写策略”；
-- Agent 只做生存/基础盘（砍树、工具、食物、简单探索），不主动冲高分；
+- 启动时先检查 `strategy.md` / `strategy.json`：**都为空** → 自动进入**自主普通游戏模式**；
+- 不再只做“基础盘”，而是读 memory（规则/技能/情境）+ 当前状态，自己决定生存/探索/资源/建造；
+- **赛前默认不启用比赛规则**（`COMPETITION_MODE=False`）：不按 advancement 分数优化，不追高分；
+- 比赛当天加 `--competition`（或 `.env` 里 `COMPETITION_MODE=true`）才启用计分驱动；
 - 这符合“先学规则、别执着于现在执行比赛策略”的目标。
 
 ### 7.4 JSON 还保留吗
@@ -787,7 +835,7 @@ python main.py run --strategy data\strategy_safe.json
 - 游戏表现分 = 本队原始分 ÷ 本届最高原始分 × 60；
 - 并列：先比表现分 → 难度 5 数量 → 难度 4 → … → 更早达到最终分。
 
-官方计分表：99 项计分、合计 3388 分（生成在 `Codes/data/advancement_scores.json`）。
+官方计分表：99 项计分、合计 3394 分（生成在 `Codes/data/advancement_scores.json`）。
 
 ### 8.3 资源配额
 
@@ -1051,7 +1099,7 @@ python main.py run --minutes 10
 | `Codes/trajectory.py` / `report.py` | 日志与统计 | 低 |
 | `Codes/mock_api.py` | 假服务器/假大脑 | 测试 |
 | `Codes/supervisor.py` | 守护进程 | 低 |
-| `Codes/tests/` | 88 项单测 | 改代码时 |
+| `Codes/tests/` | 94 项单测 | 改代码时 |
 | `Codes/local_bot/` | 局域网桥接（Node） | 测试 |
 | `Codes/my_server/` | 自有服务器适配 | 以后 |
 
@@ -1083,9 +1131,9 @@ python main.py run --minutes 10
 | 时间 | 版本 | 变更 |
 |---|---|---|
 | 2026-11-12 | v1 | 键盘模拟 + 截图识别（已废弃） |
-| 2026-11-13 上午 | 检查点 `5968a88` | 重构前快照（API 版） |
+| 2026-11-13 上午 | 检查点 `5968a94` | 重构前快照（API 版） |
 | 2026-11-13 | v2 `d22e428` | 技能层/预算/状态恢复/无人值守/测试/文档 |
-| 2026-11-13 | `f0a2889` | 策略框架（分数结构/路线/调度规划） |
+| 2026-11-13 | `f0a2949` | 策略框架（分数结构/路线/调度规划） |
 | 2026-11-13 | `ac4497a` | 局域网桥接 + `BACKEND` 切换 |
 | 2026-11-13 | `2955c56` | 端口自检/重连/ECONNREFUSED 提示 |
 | 2026-11-13 | `5f5a10e` | craft 缺料误判与拉黑死循环修复 |

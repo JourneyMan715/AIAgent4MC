@@ -44,7 +44,8 @@ _OBSERVE_SKILLS = {"scan", "survey"}
 
 class Agent:
     def __init__(self, api, llm, state, *, cfg=default_config, planner=None,
-                 trajectory=None, verbose=True, decide_locally=False, control=None):
+                 trajectory=None, verbose=True, decide_locally=False, control=None,
+                 autonomous=False, competition=True):
         self.api = api
         self.llm = llm
         self.state = state
@@ -52,13 +53,17 @@ class Agent:
         self.verbose = verbose
         self.decide_locally = decide_locally
         self.control = control
+        self.autonomous = autonomous
+        self.competition = competition
 
         table_path = os.path.join(_HERE, "data", "advancement_scores.json")
         self.table = load_table(table_path)
         self.scorer = lambda adv_id, frame="task": score(adv_id, frame, self.table)
         strategy_path = os.path.join(
             _HERE, getattr(cfg, "STRATEGY_FILE", "data/strategy.json"))
-        self.planner = planner or Planner(llm, strategy_path=strategy_path)
+        self.planner = planner or Planner(
+            llm, strategy_path=strategy_path,
+            autonomous=self.autonomous, competition=self.competition)
         self.traj = trajectory or Trajectory(
             os.path.join(_HERE, cfg.LOG_DIR), state.data.get("run_id"))
         self.llm.on_usage = self.state.update_tokens
@@ -341,7 +346,7 @@ class Agent:
 
     def _run_safety(self, skill, args):
         try:
-            result = skills.run_skill(self.api, self.state, skill, args)
+            result = self._run_skill(skill, args)
             summary = result.get("summary", skill)
             print(f"  🛟 {summary}")
             self.state.add_recent(skill, True, summary)
@@ -351,6 +356,10 @@ class Agent:
             message = getattr(e, "message", str(e))
             self.state.add_recent(skill, False, message)
             self.traj.log("safety", skill=skill, ok=False, error=message)
+
+    def _run_skill(self, skill, args):
+        from skills_registry import execute
+        return execute(self.api, self.state, skill, args)
 
     # ================================================================
     # 决策
@@ -484,7 +493,7 @@ class Agent:
         self._skill_api_calls = 0
         self._skill_api_ms = 0.0
         try:
-            result = skills.run_skill(self.api, self.state, skill, args)
+            result = self._run_skill(skill, args)
             elapsed = time.time() - started
             summary = result.get("summary", skill)
             print(f"  ✅ {summary}（{elapsed:.0f}s{self._skill_latency_text()}）")

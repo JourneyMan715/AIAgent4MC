@@ -27,21 +27,20 @@ import os
 import time
 
 import config
+from dynamic_skills import DynamicSkills
 from knowledge import KnowledgeBase
 from llm import BudgetExceeded, LLMFatalError, LLMError
 from loopguard import LoopGuard, action_signature
 from mc_api import McApiError
-from skills import SKILLS, SkillError, run_skill, skill_help
+from skills import SKILLS, SkillError
+from skills_registry import execute as execute_skill, has_skill, help_text
 from trajectory import Trajectory
 from world_state import WorldState
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 
-# 学习阶段允许的实验技能：先不碰战斗/下界/末地，避免把测试世界搞崩
-LEARN_SKILLS = [
-    "survey", "scan", "chop_tree", "collect", "craft",
-    "smelt", "eat", "equip", "place", "explore",
-]
+# 全部技能开放（含 attack/flee）；实验风险由模型自己评估 + 用户在问答里确认
+LEARN_SKILLS = list(SKILLS.keys())
 
 SYSTEM_PROMPT = """你是 Minecraft 的学习层（不是比赛执行层，也不是聊天助手）。
 你的目标：通过**做实验 + 问用户**，把游戏规则、合成配方、掉落、工具、生物行为、接口行为学清楚，写进 memory。
@@ -51,7 +50,7 @@ SYSTEM_PROMPT = """你是 Minecraft 的学习层（不是比赛执行层，也�
 {{"action":"ask_user","question":"一个具体问题","why":"为什么需要问"}}
 {{"action":"experiment","skill":"技能名","args":{{...}},"topic":"想验证什么","hypothesis":"你的假设"}}
 {{"action":"record_rule","topic":"规则分类","rule":"结论","evidence":"来自哪个实验/用户回答"}}
-{{"action":"record_skill","name":"技能名","notes":"什么时候用、注意什么","args":{{...}}}}
+{{"action":"record_skill","name":"组合技能名","description":"什么时候用","args":{{...}},"steps":[{{"skill":"chop_tree","args":{{}}}},{{"skill":"craft","args":{{"item":"wooden_pickaxe","count":1}}}}]}}
 {{"action":"scan"}}
 {{"action":"survey"}}
 {{"action":"done","why":"学够了/到时间了"}}
@@ -67,10 +66,11 @@ SYSTEM_PROMPT = """你是 Minecraft 的学习层（不是比赛执行层，也�
 5. 做实验前给假设；实验后用 record_rule 记录结论。结论要具体（“橡木原木→4 木板”比“可以合成”好）。
 6. **情境要连贯**：memory 的 episode 是连续学习过程；下一轮实验要延续上一轮（改参数/换条件/验证结论），不要每次从零开始。
 7. 不要连续重复同一个实验；失败也是结论，记录失败条件和错误码。
-8. 只在安全范围实验（不主动下矿洞深处、不惹怪、不去下界/末地）。
-9. 不要冲 advancement，不要为了分数冒险。
-10. 用户回答后，要基于回答继续，不要重复问同一个问题。
-11. 只输出 JSON，字段用双引号。
+8. **所有技能都已开放**（含 attack/flee/下界相关探索），但战斗、岩浆、虚空附近要先在问答里确认；安全第一。
+9. 如果验证出一套稳定的多步流程，用 record_skill 的 `steps` 打包成 JSON 组合技能；以后决策只需调用这个 skill 名。
+10. 不要冲 advancement，不要为了分数冒险。
+11. 用户回答后，要基于回答继续，不要重复问同一个问题。
+12. 只输出 JSON，字段用双引号。
 """
 
 
@@ -81,6 +81,7 @@ class LearnAgent:
         self.llm = llm
         self.state = state
         self.knowledge = knowledge or KnowledgeBase()
+        self.dynamic = DynamicSkills()
         self.input_fn = input_fn or input
         self.cfg = cfg or config
         self.control = control
@@ -233,7 +234,7 @@ class LearnAgent:
         time_left = None
         if getattr(self, "deadline", None):
             time_left = max(0.0, (self.deadline - time.time()) / 60.0)
-        system = SYSTEM_PROMPT.format(skills=skill_help(LEARN_SKILLS))
+        system = SYSTEM_PROMPT.format(skills=help_text())
         user = json.dumps(self._brief(time_left), ensure_ascii=False,
                           separators=(",", ":"))
         messages = [
@@ -275,17 +276,30 @@ class LearnAgent:
                     "evidence": str(obj.get("evidence") or "")[:300]}
         if action == "record_skill":
             name = str(obj.get("name") or "").strip()
-            notes = str(obj.get("notes") or "").strip()
+            notes = str(obj.get("notes") or obj.get("description") or "").strip()
             if not name or not notes:
                 return None
             args = obj.get("args") if isinstance(obj.get("args"), dict) else {}
+            steps = []
+            raw_steps = obj.get("steps")
+            if isinstance(raw_steps, list):
+                for step in raw_steps[:30]:
+                    if not isinstance(step, dict):
+                        continue
+                    skill = str(step.get("skill") or "").strip()
+                    if not skill:
+                        continue
+                    steps.append({
+                        "skill": skill,
+                        "args": step.get("args") if isinstance(step.get("args"), dict) else {},
+                    })
             return {"action": "record_skill", "name": name[:80],
-                    "notes": notes[:800], "args": args}
+                    "notes": notes[:800], "args": args, "steps": steps}
         if action in ("scan", "survey"):
             return {"action": action}
         if action == "experiment":
             skill = str(obj.get("skill") or "").strip().lower()
-            if skill not in LEARN_SKILLS:
+            if skill not in LEARN_SKILLS and not has_skill(skill):
                 return None
             args = obj.get("args") if isinstance(obj.get("args"), dict) else {}
             return {
@@ -322,11 +336,21 @@ class LearnAgent:
             return
         if action == "record_skill":
             item = self.knowledge.add_skill(
-                decision["name"], decision["notes"], decision.get("args"))
+                decision["name"], decision["notes"], decision.get("args"),
+                steps=decision.get("steps"))
             if item:
                 print(f"  📝 记下技能：{item['name']}")
+                if decision.get("steps"):
+                    try:
+                        self.dynamic.add(
+                            decision["name"], decision["notes"],
+                            decision["steps"], decision.get("args"))
+                        print(f"  📦 已打包 JSON 组合技能：{decision['name']}（{len(decision['steps'])} 步）")
+                    except SkillError as exc:
+                        print(f"  ⚠️ 打包组合技能失败：{exc}")
                 self._turn({"kind": "skill", "text": item["name"] + "：" + item["notes"]})
-                self.traj.log("learn_skill", name=item["name"])
+                self.traj.log("learn_skill", name=item["name"],
+                              steps=len(decision.get("steps") or []))
             return
         if action in ("scan", "survey"):
             self._experiment(action, {}, topic=action, hypothesis="")
@@ -346,7 +370,7 @@ class LearnAgent:
         ok = False
         summary = ""
         try:
-            result = run_skill(self.api, self.state, skill, args) or {}
+            result = execute_skill(self.api, self.state, skill, args) or {}
             summary = str(result.get("summary") or skill)
             ok = True
             print(f"  ✅ {summary}（{time.time() - started:.0f}s）")
